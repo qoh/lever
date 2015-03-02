@@ -1,0 +1,4 @@
+{
+    "cmd": "jison",
+    "args": ["syntax.jison", "syntax.jisonlex"]
+}
