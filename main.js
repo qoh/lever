@@ -32,10 +32,19 @@ var generate = function(node, opt, ctx, join) {
             } else {
                 return "return;";
             }
+        case "if-stmt":
+            if (node.else !== null) {
+                return "if(" + generate(node.cond, opt, ctx) + ")" +
+                    "{" + generate(node.body, opt, ctx) + "}" +
+                    "else " + generate(node.else, opt, ctx);
+            } else {
+                return "if(" + generate(node.cond, opt, ctx) + ")" +
+                    "{" + generate(node.body, opt, ctx) + "}";
+            }
         case "foreach-stmt":
-            return "%___jeopardy=" + generate(node.iter, opt, ctx) + ";" +
-                "while(iter_next(%___jeopardy)){" + generate(node.bind, opt, ctx) +
-                "=$iter_value[%___jeopardy];" + generate(node.body, opt, ctx) + "}";
+            return "%__curr_iter=" + generate(node.iter, opt, ctx) + ";" +
+                "while(iter_next(%__curr_iter)){" + generate(node.bind, opt, ctx) +
+                "=$iter_value[%__curr_iter];" + generate(node.body, opt, ctx) + "}";
         case "loop-stmt":
             return "while(1){" + generate(node.body, opt, ctx) + "}";
         case "expr-stmt":
@@ -44,6 +53,15 @@ var generate = function(node, opt, ctx, join) {
             return node.name + "(" + generate(node.args, opt, ctx, ",") + ")";
         case "variable":
             return (node.global ? "$" : "%") + node.name;
+        case "constant":
+            switch (node.what) {
+                case "integer": return node.value;
+                case "float": return node.value;
+                case "string": return node.value;
+                case "boolean": return node.value == "true" ? "1" : "0";
+            }
+        case "binary":
+            return generate(node.lhs, opt, ctx) + node.op + generate(node.rhs, opt, ctx);
     }
 
     return "<< " + node.type + " >>";

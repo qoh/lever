@@ -7,6 +7,21 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 "//".*                      /* ignore comment */
 "/*"[\w\W]*?"*/"            /* ignore comment */
 
+".."                        return yytext;
+
+"=="                        return yytext;
+"!="                        return yytext;
+"<="                        return yytext;
+">="                        return yytext;
+"<"                        return yytext;
+">"                        return yytext;
+"+"                         return yytext;
+"-"                         return yytext;
+"*"                         return yytext;
+"/"                         return yytext;
+"%"                         return yytext;
+
+"="                         return yytext;
 "("                         return yytext;
 ")"                         return yytext;
 "["                         return yytext;
@@ -15,14 +30,20 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 "}"                         return yytext;
 "<"                         return yytext;
 ">"                         return yytext;
-':'                         return yytext;
-'.'                         return yytext;
-';'                         return yytext;
-','                         return yytext;
+":"                         return yytext;
+"."                         return yytext;
+";"                         return yytext;
+","                         return yytext;
+
+"!"                         return yytext;
+"~"                         return yytext;
 
 "fn"                        return 'fn';
 "return"                    return 'return';
-"foreach"                   return 'foreach';
+"if"                        return 'if';
+"else"                      return 'else';
+"for"                       return 'for';
+"in"                        return 'in';
 "loop"                      return 'loop';
 
 {digit}+                    return 'integer';
