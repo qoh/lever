@@ -59,7 +59,7 @@ function Vec::swap(%this, %i, %j) {
 
 function Vec::join(%this, %sep) {
     for (%i = 0; %i < %this.length; %i++) {
-        %str = %str @ (%i > 0 ? %sep : "") @ %this.value[%i]);
+        %str = %str @ (%i > 0 ? %sep : "") @ %this.value[%i];
     }
 
     return %str;
@@ -95,7 +95,7 @@ function Vec::apply(%this, %func) {
     }
 }
 
-function Vec::reduce(%this, %init, %func) {
+function Vec::fold(%this, %init, %func) {
     for (%i = 0; %i < %this.length; %i++) {
         %init = call(%func, %init, %this.value[%i]);
     }

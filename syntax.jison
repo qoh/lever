@@ -1,11 +1,19 @@
-%right '='
-%right UNARY
-%left '..'
+%left '['
+%right '%=' '&=' '^=' '+=' '-=' '*=' '/=' '|=' '<<=' '>>=' '='
+%left '?' ':'
+%left '||'
+%left '&&'
+%left '|'
+%left '^'
+%left '&'
 %left '==' '!='
 %left '<' '<=' '>' '>='
+%left '..' '...' '@'
+%left '<<' '>>'
 %left '+' '-'
 %left '*' '/' '%'
-%right '!' '~' UNARY
+%right '!' '~' '++' '--' UNARY
+%left '.'
 
 %%
 
@@ -24,7 +32,16 @@ decl_list
 decl
     : stmt
         { $$ = $1; }
-    | 'fn' var_local '(' ident_list ')' block
+    | fn_decl
+        { $$ = $1; }
+    | 'package' var_local block_fn_only
+        { $$ = {"type": "package-decl", "name": $2, "body": $3, "active": false}; }
+    | 'active' 'package' var_local block_fn_only
+        { $$ = {"type": "package-decl", "name": $3, "body": $4, "active": true}; }
+    ;
+
+fn_decl
+    : 'fn' var_local '(' ident_list ')' block
         { $$ = {"type": "fn-stmt", "name": $2, "args": $4, "body": $6}; }
     | 'fn' var_local '(' ')' block
         { $$ = {"type": "fn-stmt", "name": $2, "args": [], "body": $5}; }
@@ -32,10 +49,24 @@ decl
         { $$ = {"type": "fn-stmt", "name": $2, "args": [], "body": $3}; }
     ;
 
+fn_decl_list
+    : fn_decl
+        { $$ = [$1]; }
+    | fn_decl_list fn_decl
+        { $$ = $1; $1.push($2); }
+    ;
+
 block
     : '{' '}'
         { $$ = []; }
     | '{' stmt_list '}'
+        { $$ = $2; }
+    ;
+
+block_fn_only
+    : '{' '}'
+        { $$ = []; }
+    | '{' fn_decl_list '}'
         { $$ = $2; }
     ;
 
@@ -53,10 +84,18 @@ stmt
         { $$ = {"type": "return-stmt", "expr": null}; }
     | 'return' expr ';'
         { $$ = {"type": "return-stmt", "expr": $2}; }
+    | 'break' ';'
+        { $$ = {"type": "break-stmt"}; }
+    | 'continue' ';'
+        { $$ = {"type": "continue-stmt"}; }
     | if_stmt
         { $$ = $1; }
     | 'for' var 'in' expr block
         { $$ = {"type": "foreach-stmt", "bind": $2, "iter": $4, "body": $5}; }
+    | 'for' '(' var 'in' ')' expr block
+        { $$ = {"type": "foreach-stmt", "bind": $2, "iter": $4, "body": $5}; }
+    | 'while' expr block
+        { $$ = {"type": "while-stmt", "cond": $2, "body": $3}; }
     | 'loop' block
         { $$ = {"type": "loop-stmt", "body": $2}; }
     ;
@@ -77,6 +116,13 @@ ident_list
         { $$ = $1; $1.push($3); }
     ;
 
+expr_list_opt
+    :
+        { $$ = []; }
+    | expr_list
+        { $$ = $1; }
+    ;
+
 expr_list
     : expr
         { $$ = [$1]; }
@@ -88,9 +134,14 @@ expr
     : stmt_expr
         { $$ = $1; }
     | '(' expr ')'
-        { $$ = $2; }
+        //{ $$ = $2; }
+        { $$ = {"type": "expr-expr", "expr": $2}; }
     | var
         { $$ = $1; }
+    | expr '.' var_local
+        { $$ = {"type": "field-get", "expr": $1, "name": $3}; }
+    | expr '[' expr ']'
+        { $$ = {"type": "array-get", "expr": $1, "array": $3}; }
     | 'integer'
         { $$ = {"type": "constant", "what": "integer", "value": $1}; }
     | 'float'
@@ -121,13 +172,33 @@ expr
         { $$ = {"type": "binary", "op": $2, "lhs": $1, "rhs": $3}; }
     | expr '%' expr
         { $$ = {"type": "binary", "op": $2, "lhs": $1, "rhs": $3}; }
+    | expr '@' expr
+        { $$ = {"type": "binary", "op": $2, "lhs": $1, "rhs": $3}; }
     | expr '..' expr
         {
             $$ = {
                 "type": "call",
                 "name": "range",
+                "args": [$1, $3]
+            };
+        }
+    | expr '...' expr
+        {
+            $$ = {
+                "type": "call",
+                "name": "range",
                 "args": [
-                    $1, $3
+                    $1,
+                    {
+                        "type": "binary",
+                        "op": "+",
+                        "lhs": $3,
+                        "rhs": {
+                            "type": "constant",
+                            "what": "integer",
+                            "value": "1"
+                        }
+                    }
                 ]
             };
         }
@@ -135,13 +206,36 @@ expr
         { $$ = {"type": "unary", "op": $1, "expr": $2}; }
     | '~' expr  %prec UNARY
         { $$ = {"type": "unary", "op": $1, "expr": $2}; }
+    // Sugar constructors
+    | '[' expr_list_opt ']'
+        { $$ = {"type": "create-vec", "values": $2}; }
     ;
 
 stmt_expr
-    : var_local '(' ')'
+    : var '=' expr
+        { $$ = {"type": "assign", "var": $1, "rhs": $3}; }
+    | expr '.' var_local '=' expr
+        { $$ = {"type": "field-set", "expr": $1, "name": $3, "rhs": $5}; }
+    | expr '[' expr ']' '=' expr
+        { $$ = {"type": "array-set", "expr": $1, "array": $3, "rhs": $6}; }
+    | 'macro_name' '(' ')'
+        { $$ = {"type": "macro-call", "name": $1, "args": []}; }
+    | 'macro_name' '(' expr_list ')'
+        { $$ = {"type": "macro-call", "name": $1, "args": $3}; }
+    | var_local '(' ')'
         { $$ = {"type": "call", "name": $1, "args": []}; }
     | var_local '(' expr_list ')'
         { $$ = {"type": "call", "name": $1, "args": $3}; }
+    | var_local '::' var_local '(' ')'
+        { $$ = {"type": "call", "name": $3, "scope": $1, "args": []}; }
+    | var_local '::' var_local '(' expr_list ')'
+        { $$ = {"type": "call", "name": $3, "scope": $1, "args": $5}; }
+    | expr '.' var_local '(' ')'
+        { $$ = {"type": "call", "name": $3, "target": $1, "args": []}; }
+    | expr '.' var_local '(' expr_list ')'
+        { $$ = {"type": "call", "name": $3, "target": $1, "args": $5}; }
+    | ts_fence
+        { $$ = {"type": "ts-fence-expr", "code": $1.substring(1, $1.length-1)}; }
     ;
 
 var
