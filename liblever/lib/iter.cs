@@ -28,61 +28,27 @@ function iter_next(%id) {
 
 // ======
 // IteratorProto methods
-function iter_proto_map_next(%id) {
-    if (iter_next($iter_take[%id])) {
-        $iter_value[%id] = call($iter_func[%id],
-            $iter_value[$iter_take[%id]]);
-        return 1;
-    }
-
-    return 0;
-}
-
-function iter_proto_map_drop(%id) {
-    iter_drop($iter_take[%id]);
-    $iter_take[%id] = "";
-    $iter_func[%id] = "";
-}
-
 function IteratorProto::delete(%this) {}
 function IteratorProto::setName(%this, %name) {}
 
-function IteratorProto::map(%take, %func) {
-    %id = iter_new("iter_proto_map_next", "iter_proto_map_drop");
-    $iter_take[%id] = %take;
-    $iter_func[%id] = %func;
-    return %id;
-}
+function IteratorProto::count(%this) {
+    %n = 0;
 
-function IteratorProto::each(%id, %func) {
-    while (iter_next(%id)) {
-        call(%func, $iter_value[%id]);
+    while (iter_next(%this)) {
+        %n++;
     }
 
-    iter_drop(%id);
+    iter_drop(%this);
+    return %n;
 }
 
-function IteratorProto::fold(%id, %init, %func) {
-    while (iter_next(%id)) {
-        %init = call(%func, %init, $iter_value[%id]);
+function IteratorProto::last(%this) {
+    while (iter_next(%this)) {
+        %value = $iter_value[%this];
     }
 
-    iter_drop(%id);
-    return %init;
-}
-
-function IteratorProto::collect(%id) {
-    %vec = new ScriptObject() {
-        class = "Vec";
-        length = 0;
-    };
-
-    while (iter_next(%id)) {
-        %vec.push($iter_value[%id]);
-    }
-
-    iter_drop(%id);
-    return %vec;
+    iter_drop(%this);
+    return %value;
 }
 
 function IteratorProto::first(%id) {
@@ -94,14 +60,194 @@ function IteratorProto::first(%id) {
     return %value;
 }
 
-function IteratorProto::last(%id) {
+function IteratorProto::nth(%this, %n) {
+    for (%i = 0; %i < %n; %i++) {
+        if (!iter_next(%this)) {
+            iter_drop(%this);
+            return "";
+        }
+    }
+
+    %value = $iter_value[%this];
+    iter_drop(%this);
+    return %value;
+}
+
+function IteratorProto::chain(%this, %other) {
+    return "NotImplemented";
+}
+
+function iter_proto_map_next(%id) {
+    if (iter_next($iter_iter[%id])) {
+        $iter_value[%id] = call($iter_func[%id], $iter_value[$iter_iter[%id]]);
+        return 1;
+    }
+
+    return 0;
+}
+function iter_proto_map_drop(%id) {
+    iter_drop($iter_iter[%id]);
+    $iter_iter[%id] = "";
+    $iter_func[%id] = "";
+}
+function IteratorProto::map(%this, %func) {
+    %id = iter_new("iter_proto_map_next", "iter_proto_map_drop");
+    $iter_iter[%id] = %this;
+    $iter_func[%id] = %func;
+    return %id;
+}
+
+function iter_proto_filter_next(%id) {
+    while (iter_next($iter_iter[%id])) {
+        if (call($iter_pred[%id], $iter_value[$iter_iter[%id]])) {
+            $iter_value[%id] = $iter_value[$iter_iter[%id]];
+            return 1;
+        }
+    }
+
+    return 0;
+}
+function iter_proto_filter_drop(%id) {
+    iter_drop($iter_iter[%id]);
+    $iter_iter[%id] = "";
+    $iter_pred[%id] = "";
+}
+function IteratorProto::filter(%this, %predicate) {
+    %id = iter_new("iter_proto_filter_next", "iter_proto_filter_drop");
+    $iter_iter[%id] = %this;
+    $iter_pred[%id] = %predicate;
+    return %id;
+}
+
+function IteratorProto::enumerate(%this) {
+    return "NotImplemented";
+}
+
+function IteratorProto::peekable(%this) {
+    return "NotImplemented";
+}
+
+function IteratorProto::skip(%this, %n) {
+    for (%i = 0; %i < %n && iter_next(%this); %i++) {}
+    return %this;
+}
+
+function iter_proto_take_next(%id) {
+    if ($iter_n[%id] > 0 && iter_next($iter_from[%id])) {
+        $iter_n[%id]--;
+        $iter_value[%id] = $iter_value[$iter_from[%id]];
+        return 1;
+    }
+
+    return 0;
+}
+function iter_proto_take_drop(%id) {
+    iter_drop($iter_from[%id]);
+    $iter_from[%id] = "";
+    $iter_n[%id] = "";
+}
+function IteratorProto::take(%this, %n) {
+    %id = iter_new("iter_proto_take_next", "iter_proto_take_drop");
+    $iter_from[%id] = %this;
+    $iter_n[%id] = %n;
+    return %id;
+}
+
+function IteratorProto::collect(%this) {
+    %vec = new ScriptObject() {
+        class = "Vec";
+        length = 0;
+    };
+
+    while (iter_next(%this)) {
+        %vec.push($iter_value[%this]);
+    }
+
+    iter_drop(%this);
+    return %vec;
+}
+
+function IteratorProto::fold(%this, %init, %func) {
+    while (iter_next(%this)) {
+        %init = call(%func, %init, $iter_value[%this]);
+    }
+
+    iter_drop(%this);
+    return %init;
+}
+
+function IteratorProto::all(%this, %predicate) {
+    while (iter_next(%this)) {
+        if (!call(%predicate, $iter_value[%this])) {
+            iter_drop(%this);
+            return 0;
+        }
+    }
+
+    iter_drop(%this);
+    return 1;
+}
+
+function IteratorProto::any(%this, %predicate) {
+    while (iter_next(%this)) {
+        if (call(%predicate, $iter_value[%this])) {
+            iter_drop(%this);
+            return 1;
+        }
+    }
+
+    iter_drop(%this);
+    return 0;
+}
+
+function IteratorProto::find(%this, %predicate) {
+    while (iter_next(%this)) {
+        %value = $iter_value[%this];
+        if (call(%predicate, %value)) {
+            iter_drop(%this);
+            return %value;
+        }
+    }
+
+    iter_drop(%this);
+    return "";
+}
+
+function IteratorProto::max(%this) {
+    if (iter_next(%this)) {
+        %max = $iter_value[%this];
+    }
+
+    while (iter_next(%this)) {
+        %max = getMax(%max, $iter_value[%this]);
+    }
+
+    iter_drop(%this);
+    return 0;
+}
+
+function IteratorProto::min(%this) {
+    if (iter_next(%this)) {
+        %min = $iter_value[%this];
+    }
+
+    while (iter_next(%this)) {
+        %min = getMin(%min, $iter_value[%this]);
+    }
+
+    iter_drop(%this);
+    return 0;
+}
+
+function IteratorProto::each(%id, %func) {
     while (iter_next(%id)) {
-        %value = $iter_value[%id];
+        call(%func, $iter_value[%id]);
     }
 
     iter_drop(%id);
-    return %value;
 }
+
+// IteratorProto::reverse
 
 // ======
 // Global iterator sources
