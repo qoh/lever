@@ -23,20 +23,3 @@ fn test() {
 
     return vec;
 }
-
-/*
-    $ node main.js tests/vec.ls
-
-    ==>exec("config/lever/tests/vec.ls.cs");
-    ==>$v = test();
-    We have a Vec with 5 elements
-    Sum: 32
-    Number #1 is 6
-    Number #2 is 7
-    Number #3 is 5
-    Number #4 is 6
-    Number #5 is 8
-    ==>function double(%n) { return %n*2; }
-    ==>echo($v.iter().map("double").first());
-    12
-*/
