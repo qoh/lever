@@ -1,7 +1,19 @@
 var parser = require("./syntax").parser;
 
 var find_root = function(ctx, type) {
-    while (ctx !== null) {
+    if (type === undefined || type === null) {
+        while (ctx.from !== undefined) {
+            ctx = ctx.from;
+        }
+
+        return ctx;
+    }
+
+    while (ctx !== undefined) {
+        if (ctx.node.type == "lambda") {
+            break;
+        }
+
         if (ctx.node.type == type) {
             return ctx;
         } else {
@@ -123,6 +135,20 @@ var generate = function(node, opt, ctx, join) {
             return node.op + generate(node.rhs, opt, nxt);
         case "ts-fence-expr":
             return node.code;
+        case "lambda":
+            var root = find_root(ctx);
+            var name = "___anonymous_" + "hashhere";
+            var args = "";
+
+            for (var i = 0; i < node.args.length; i++) {
+                args += (i > 0 ? "," : "") + "%" + node.args[i];
+            }
+
+            root.inject += "function " + name +
+                "(" + args + ")" +
+                "{" + generate(node.body, opt, nxt) + "}";
+
+            return "\"" + name + "\"";
         case "create-vec":
             var values = "";
 
@@ -141,7 +167,11 @@ var convert = function(source) {
     var ast = parser.parse(source);
     //console.log(JSON.stringify(ast, null, 4));
 
-    return generate(ast, null, null);
+    var opt = {};
+    var ctx = {inject: ""};
+
+    var generated = generate(ast, opt, ctx);
+    return ctx.inject + generated;
 };
 
 var fs = require("fs");
