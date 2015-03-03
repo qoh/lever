@@ -1,4 +1,4 @@
-%left '['
+%left '[' '{'
 %right '%=' '&=' '^=' '+=' '-=' '*=' '/=' '|=' '<<=' '>>=' '='
 %right '=>'
 %left '?' ':'
@@ -156,14 +156,8 @@ expr
         { $$ = {"type": "field-get", "expr": $1, "name": $3}; }
     | expr '[' expr ']'
         { $$ = {"type": "array-get", "expr": $1, "array": $3}; }
-    | 'integer'
-        { $$ = {"type": "constant", "what": "integer", "value": $1}; }
-    | 'float'
-        { $$ = {"type": "constant", "what": "float", "value": $1}; }
-    | 'string'
-        { $$ = {"type": "constant", "what": "string", "value": $1}; }
-    | 'boolean'
-        { $$ = {"type": "constant", "what": "boolean", "value": $1}; }
+    | constant_value
+        { $$ = $1; }
     | expr '==' expr
         { $$ = {"type": "binary", "op": $2, "lhs": $1, "rhs": $3}; }
     | expr '!=' expr
@@ -220,6 +214,18 @@ expr
         { $$ = {"type": "unary", "op": $1, "expr": $2}; }
     | '~' expr  %prec UNARY
         { $$ = {"type": "unary", "op": $1, "expr": $2}; }
+    ;
+
+constant_value
+    // Primitive type
+    : 'integer'
+        { $$ = {"type": "constant", "what": "integer", "value": $1}; }
+    | 'float'
+        { $$ = {"type": "constant", "what": "float", "value": $1}; }
+    | 'string'
+        { $$ = {type: "constant", what: "string", value: $1.substring(1, $1.length-1)}; }
+    | 'boolean'
+        { $$ = {"type": "constant", "what": "boolean", "value": $1}; }
     // Sugar constructors
     | var_local '=>' block
         { $$ = {type: "lambda", "args": [$1], "body": $3}; }
@@ -235,6 +241,29 @@ expr
     //     { $$ = {type: "lambda", "args": $2, "body": [{"type": "return-stmt", "expr": $5}]}; }
     | '[' expr_list_opt ']'
         { $$ = {"type": "create-vec", "values": $2}; }
+    // | '{' '}'
+    //     { $$ = {type: "create-map", "pairs": []}; }
+    | '{' map_pair_list '}'
+        { $$ = {type: "create-map", "pairs": $2}; }
+    ;
+
+map_pair_list
+    // // conflict
+    // :
+    //     { $$ = []; }
+    // | map_pair
+    //     { $$ = [$1]; }
+    : map_pair
+        { $$ = [$1]; }
+    | map_pair_list ',' map_pair
+        { $$ = $1; $1.push($3); }
+    ;
+
+map_pair
+    // : '[' expr ']' ':' expr
+    //     { $$ = [$2, $4]; }
+    : var_local ':' expr
+        { $$ = [{type: "constant", what: "string", value: $1}, $3]; }
     ;
 
 stmt_expr

@@ -14,11 +14,11 @@ var find_root = function(ctx, type) {
     }
 
     while (ctx !== undefined) {
-        if (ctx.node.type == "lambda") {
+        if (ctx.node !== undefined && ctx.node.type == "lambda") {
             break;
         }
 
-        if (ctx.node.type == type) {
+        if (ctx.node !== undefined && ctx.node.type == type) {
             return ctx;
         } else {
             ctx = ctx.from;
@@ -91,8 +91,17 @@ var generate = function(node, opt, ctx, join) {
                     "{" + generate(node.body, opt, nxt) + "}";
             }
         case "foreach-stmt":
-            var ref = "%__curr_iter";
+            var root = find_root(ctx, "foreach-stmt");
+            var ref;
+
+            if (root === null) {
+                ref = "%__iter";
+            } else {
+                ref = root.ref + "_";
+            }
+
             nxt.ref = ref;
+
             return ref + "=" + generate(node.iter, opt, nxt) + ";" +
                 "while(iter_next(" + ref +")){" + generate(node.bind, opt, nxt) +
                 "=$iter_value[" + ref + "];" + generate(node.body, opt, nxt) + "}" +
@@ -132,7 +141,7 @@ var generate = function(node, opt, ctx, join) {
             switch (node.what) {
                 case "integer": return node.value;
                 case "float": return node.value;
-                case "string": return node.value;
+                case "string": return "\"" + node.value + "\"";
                 case "boolean": return node.value == "true" ? "1" : "0";
             }
         case "binary":
@@ -168,6 +177,16 @@ var generate = function(node, opt, ctx, join) {
 
             return "new ScriptObject(){class=\"Vec\";length=" +
                 node.values.length + ";" + values + "}";
+        case "create-map":
+            console.log(JSON.stringify(node, null, 4));
+            var values = "";
+
+            for (var i = 0; i < node.pairs.length; i++) {
+                values += ".____newpair(" + generate(node.pairs[i][0], opt, nxt) +
+                    "," + generate(node.pairs[i][1], opt, nxt) + ")";
+            }
+
+            return "____newhashmap()" + values;
     }
 
     return "<< " + node.type + " " + JSON.stringify(ctx.node, " ") + " >>";

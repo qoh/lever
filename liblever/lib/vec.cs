@@ -45,10 +45,60 @@ function Vec::pop(%this) {
     return %value;
 }
 
-// insert(index, value) in O(n)
-// remove(index) -> value in O(n)
-// insert_swap(index, value) in O(1)
-// remove_swap(index) -> value in O(1)
+function Vec::insert(%this, %index, %value) {
+    if (%index !$= mFloor(%index) || %index < 0 || %index > %this.length) {
+        error("ERROR: Not a valid index");
+        return "";
+    }
+
+    for (%i = %this.length; %i > %index; %i--) {
+        %this.value[%i] = %this.value[%i - 1];
+    }
+    
+    %this.value[%index] = %value;
+    %this.length++;
+}
+
+function Vec::remove(%this, %index) {
+    if (%index !$= mFloor(%index) || %index < 0 || %index >= %this.length) {
+        error("ERROR: Not a valid index");
+        return "";
+    }
+
+    %value = %this.value[%index];
+    %this.length--;
+
+    for (%i = %index; %i < %this.length; %i++) {
+        %this.value[%i] = %this.value[%i + 1];
+    }
+
+    %this.value[%this.length] = "";
+    return %value;
+}
+
+function Vec::insert_swap(%this, %index, %value) {
+    if (%index !$= mFloor(%index) || %index < 0 || %index > %this.length) {
+        error("ERROR: Not a valid index");
+        return "";
+    }
+
+    %this.push(%value);
+    %this.swap(%this.length - 1, %index);
+}
+
+function Vec::remove_swap(%this, %index) {
+    if (%index !$= mFloor(%index) || %index < 0 || %index >= %this.length) {
+        error("ERROR: Not a valid index");
+        return "";
+    }
+
+    %value = %this.value[%index];
+
+    %this.value[%index] = %this.value[%this.length--];
+    %this.value[%this.length] = "";
+
+    return %value;
+}
 
 function Vec::swap(%this, %i, %j) {
     %t = %this.value[%i];
