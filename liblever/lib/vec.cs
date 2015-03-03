@@ -116,7 +116,12 @@ function vec_iter_next(%id) {
 }
 
 function vec_iter_drop(%id) {
+    if ($iter_own[%id] && isObject($iter_vec[%id])) {
+        $iter_vec[%id].delete();
+    }
+
     $iter_index[%id] = "";
+    $iter_own[%id] = "";
     $iter_vec[%id] = "";
 }
 
@@ -124,5 +129,14 @@ function Vec::iter(%this) {
     %id = iter_new("vec_iter_next", "vec_iter_drop");
     $iter_index[%id] = 0;
     $iter_vec[%id] = %this;
+    $iter_own[%id] = 0;
+    return %id;
+}
+
+function Vec::into_iter(%this) {
+    %id = iter_new("vec_iter_next", "vec_iter_drop");
+    $iter_index[%id] = 0;
+    $iter_vec[%id] = %this;
+    $iter_own[%id] = 1;
     return %id;
 }

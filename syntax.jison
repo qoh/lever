@@ -48,6 +48,17 @@ fn_decl
         { $$ = {"type": "fn-stmt", "name": $2, "args": [], "body": $5}; }
     | 'fn' var_local block
         { $$ = {"type": "fn-stmt", "name": $2, "args": [], "body": $3}; }
+
+    // extreme sugar activate
+    | 'fn' '/' var_local '(' ident_list ')' block
+        {
+            $5.unshift("client");
+            $$ = {"type": "fn-stmt", "name": "serverCmd" + $3, "args": $5, "body": $7}; }
+        }
+    | 'fn' '/' var_local '(' ')' block
+        { $$ = {"type": "fn-stmt", "name": "serverCmd" + $3, "args": ["client"], "body": $6}; }
+    | 'fn' '/' var_local block
+        { $$ = {"type": "fn-stmt", "name": "serverCmd" + $3, "args": ["client"], "body": $4}; }
     ;
 
 fn_decl_list
@@ -139,6 +150,8 @@ expr
         { $$ = {"type": "expr-expr", "expr": $2}; }
     | var
         { $$ = $1; }
+    | '@' var_local
+        { $$ = {"type": "identifier", "name": $2}; }
     | expr '.' var_local
         { $$ = {"type": "field-get", "expr": $1, "name": $3}; }
     | expr '[' expr ']'

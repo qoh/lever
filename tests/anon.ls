@@ -6,14 +6,36 @@ fn anon() {
     }
 
     vec.delete();
+
+    // =====
+    cb = () => {
+        echo("Hey! This is an anonymous function.");
+    };
+
+    ["foo", "bar"].into_iter().map(cb);
 }
 
-/*
-    $ node main.js tests/anon.ls
+fn stats(who) {
+    echo("Stats triggered by " @ who.getPlayerName());
 
-    ==>exec("config/lever/tests/anon.ls.cs");
-    ==>anon();
-    2
-    4
-    6
-*/
+    @ClientGroup.iter().each(cl => {
+        echo(cl.getPlayerName() @ " has ping " @ cl.getPing());
+    });
+}
+
+fn /stats {
+    if client.isAdmin {
+        stats(client);
+    }
+
+    for cl in @ClientGroup.iter() {
+        client.chatMessage(cl.getPlayerName() @ " has ping " @ cl.getPing());
+    }
+}
+
+active package TestPac {
+    fn /MessageSent (text) {
+        parent::serverCmdMessageSent(client, text);
+        echo("What's this -> " @ text);
+    }
+}

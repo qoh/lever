@@ -44,6 +44,9 @@ function iter_proto_map_drop(%id) {
     $iter_func[%id] = "";
 }
 
+function IteratorProto::delete(%this) {}
+function IteratorProto::setName(%this, %name) {}
+
 function IteratorProto::map(%take, %func) {
     %id = iter_new("iter_proto_map_next", "iter_proto_map_drop");
     $iter_take[%id] = %take;
@@ -51,7 +54,7 @@ function IteratorProto::map(%take, %func) {
     return %id;
 }
 
-function IteratorProto::apply(%id, %func) {
+function IteratorProto::each(%id, %func) {
     while (iter_next(%id)) {
         call(%func, $iter_value[%id]);
     }
@@ -91,7 +94,7 @@ function IteratorProto::first(%id) {
     return %value;
 }
 
-function IteratorProto::first(%id) {
+function IteratorProto::last(%id) {
     while (iter_next(%id)) {
         %value = $iter_value[%id];
     }

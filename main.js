@@ -1,3 +1,7 @@
+var fs = require("fs");
+var path = require("path");
+var crypto = require("crypto");
+
 var parser = require("./syntax").parser;
 
 var find_root = function(ctx, type) {
@@ -122,6 +126,8 @@ var generate = function(node, opt, ctx, join) {
             return generate(node.expr, opt, nxt) + "._set_array(" + generate(node.array, opt, nxt) + "," + generate(node.rhs, opt, nxt) + ")";
         case "variable":
             return (node.global ? "$" : "%") + node.name;
+        case "identifier":
+            return node.name;
         case "constant":
             switch (node.what) {
                 case "integer": return node.value;
@@ -136,8 +142,12 @@ var generate = function(node, opt, ctx, join) {
         case "ts-fence-expr":
             return node.code;
         case "lambda":
+            // TODO: better hashing
+            var sha1 = crypto.createHash("sha1");
+            sha1.update(JSON.stringify(node));
+
             var root = find_root(ctx);
-            var name = "___anonymous_" + "hashhere";
+            var name = "___anonymous_" + sha1.digest("hex");
             var args = "";
 
             for (var i = 0; i < node.args.length; i++) {
@@ -173,9 +183,6 @@ var convert = function(source) {
     var generated = generate(ast, opt, ctx);
     return ctx.inject + generated;
 };
-
-var fs = require("fs");
-var path = require("path");
 
 var file = path.normalize(process.argv[2]);
 var source = fs.readFileSync(file, "utf8");
