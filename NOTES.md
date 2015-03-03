@@ -1,7 +1,7 @@
 ## Packages
 
     package MyPac {
-        fn quit() {
+        fn quit {
             parent::quit();
         }
     }
@@ -38,6 +38,8 @@ Translates into:
         return %this;
     }
     function Foo::inc(%this){%this.n++;}
+    %x = Foo::create();
+    %x.inc();
 
 ## Image states
 
@@ -54,3 +56,32 @@ Translates into:
     }
 
 ...
+
+## Overloaded "array" access
+
+Instead of being equivalent to `xy`, `x[y]` translates to `x.__getItem(y)`. See below if array access is needed.
+
+## Fenced TorqueScript code
+
+    for i in 0..mg.numMembers {
+        `%mb = %mg.member[%i];`
+        mb.delete();
+    }
+
+## Sugar for collection types
+
+    a = ["x", 6, foo];
+    echo(a[1]);
+    for v in a.iter() { echo(v); }
+
+Translates into:
+
+    %a = new ScriptObject() {
+        class = "Vec"; // should be namespaced more
+        length = 3;
+        value0 = "x";
+        value1 = 6;
+        value2 = %foo;
+    };
+    echo(%a.__getItem(1));
+    // ...
