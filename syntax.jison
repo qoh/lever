@@ -35,6 +35,8 @@ decl
         { $$ = $1; }
     | fn_decl
         { $$ = $1; }
+    | class_decl
+        { $$ = $1; }
     | 'package' var_local block_fn_only
         { $$ = {"type": "package-decl", "name": $2, "body": $3, "active": false}; }
     | 'active' 'package' var_local block_fn_only
@@ -68,12 +70,20 @@ fn_decl_list
         { $$ = $1; $1.push($2); }
     ;
 
-block
-    : '{' '}'
-        { $$ = []; }
-    | '{' stmt_list '}'
-        { $$ = $2; }
+class_decl
+    : 'class' var_local block_fn_only
+        { $$ = {type: "class-decl", name: $2, body: $3}; }
     ;
+
+// block
+//     : '{' '}'
+//         { $$ = []; }
+//     | '{' stmt_list '}'
+//         { $$ = $2; }
+//     ;
+
+block: '{' '}' { $$ = []; } | block_non_empty { $$ = $1; };
+block_non_empty: '{' stmt_list '}' { $$ = $2; };
 
 block_fn_only
     : '{' '}'
@@ -128,15 +138,17 @@ ident_list
         { $$ = $1; $1.push($3); }
     ;
 
-expr_list_opt
-    :
-        { $$ = []; }
-    | expr_list
-        { $$ = $1; }
-    ;
+// expr_list
+//     : expr
+//         { $$ = [$1]; }
+//     | expr_list ',' expr
+//         { $$ = $1; $1.push($3); }
+//     ;
 
 expr_list
-    : expr
+    :
+        { $$ = []; }
+    | expr
         { $$ = [$1]; }
     | expr_list ',' expr
         { $$ = $1; $1.push($3); }
@@ -227,9 +239,9 @@ constant_value
     | 'boolean'
         { $$ = {"type": "constant", "what": "boolean", "value": $1}; }
     // Sugar constructors
-    | var_local '=>' block
+    | var_local '=>' block_non_empty
         { $$ = {type: "lambda", "args": [$1], "body": $3}; }
-    | '(' ')' '=>' block
+    | '(' ')' '=>' block_non_empty
         { $$ = {type: "lambda", "args": [], "body": $4}; }
     // | '(' ident_list ')' '=>' block
     //     { $$ = {type: "lambda", "args": $2, "body": $5}; }
@@ -239,21 +251,19 @@ constant_value
         { $$ = {type: "lambda", "args": [], "body": [{"type": "return-stmt", "expr": $4}]}; }
     // | '(' ident_list ')' '=>' expr
     //     { $$ = {type: "lambda", "args": $2, "body": [{"type": "return-stmt", "expr": $5}]}; }
-    | '[' expr_list_opt ']'
+    | '[' expr_list ']'
         { $$ = {"type": "create-vec", "values": $2}; }
-    // | '{' '}'
-    //     { $$ = {type: "create-map", "pairs": []}; }
     | '{' map_pair_list '}'
         { $$ = {type: "create-map", "pairs": $2}; }
     ;
 
 map_pair_list
     // // conflict
-    // :
-    //     { $$ = []; }
+    :
+        { $$ = []; }
     // | map_pair
     //     { $$ = [$1]; }
-    : map_pair
+    | map_pair
         { $$ = [$1]; }
     | map_pair_list ',' map_pair
         { $$ = $1; $1.push($3); }
@@ -273,20 +283,20 @@ stmt_expr
         { $$ = {"type": "field-set", "expr": $1, "name": $3, "rhs": $5}; }
     | expr '[' expr ']' '=' expr
         { $$ = {"type": "array-set", "expr": $1, "array": $3, "rhs": $6}; }
-    | 'macro_name' '(' ')'
-        { $$ = {"type": "macro-call", "name": $1, "args": []}; }
+    // | 'macro_name' '(' ')'
+    //     { $$ = {"type": "macro-call", "name": $1, "args": []}; }
     | 'macro_name' '(' expr_list ')'
         { $$ = {"type": "macro-call", "name": $1, "args": $3}; }
-    | var_local '(' ')'
-        { $$ = {"type": "call", "name": $1, "args": []}; }
+    // | var_local '(' ')'
+    //     { $$ = {"type": "call", "name": $1, "args": []}; }
     | var_local '(' expr_list ')'
         { $$ = {"type": "call", "name": $1, "args": $3}; }
-    | var_local '::' var_local '(' ')'
-        { $$ = {"type": "call", "name": $3, "scope": $1, "args": []}; }
+    // | var_local '::' var_local '(' ')'
+    //     { $$ = {"type": "call", "name": $3, "scope": $1, "args": []}; }
     | var_local '::' var_local '(' expr_list ')'
         { $$ = {"type": "call", "name": $3, "scope": $1, "args": $5}; }
-    | expr '.' var_local '(' ')'
-        { $$ = {"type": "call", "name": $3, "target": $1, "args": []}; }
+    // | expr '.' var_local '(' ')'
+    //     { $$ = {"type": "call", "name": $3, "target": $1, "args": []}; }
     | expr '.' var_local '(' expr_list ')'
         { $$ = {"type": "call", "name": $3, "target": $1, "args": $5}; }
     | ts_fence

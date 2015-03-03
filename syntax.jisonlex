@@ -43,6 +43,7 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 "~"                         return yytext;
 
 "fn"                        return 'fn';
+"class"                     return 'class';
 "return"                    return 'return';
 "break"                     return 'break';
 "continue"                  return 'continue';

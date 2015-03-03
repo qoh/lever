@@ -55,15 +55,36 @@ var generate = function(node, opt, ctx, join) {
 
             return ts;
         case "fn-stmt":
-            var args = "";
+            var root = find_root(ctx, "class-decl");
 
-            for (var i = 0; i < node.args.length; i++) {
-                args += (i > 0 ? "," : "") + "%" + node.args[i];
+            var name = node.name;
+            var args = node.args;
+
+            if (root !== null) {
+                name = root.node.name + "::" + name;
+                args = args.slice(0);
+                args.unshift("this");
             }
 
-            return "function " + node.name +
-                "(" + args + ")" +
+            var str = "";
+
+            for (var i = 0; i < args.length; i++) {
+                str += (i > 0 ? "," : "") + "%" + args[i];
+            }
+
+            return "function " + name + "(" + str + ")" +
                 "{" + generate(node.body, opt, nxt) + "}";
+        case "class-decl":
+            var ctor = "function " + node.name + "(" +
+                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s){" +
+                "%z=new ScriptObject(){class=\"" + node.name + "\";superCla" +
+                "ss=\"Class\";____inst=1;};if(isFunction(\"" + node.name +
+                "\",\"onNew\"))%z.onNew(" +
+                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" +
+                "return %z;}";
+            return "if(!isObject(" + node.name + "))new ScriptObject(" +
+                node.name + "){class=\"Class\";____inst=0;};" + ctor +
+                generate(node.body, opt, nxt);
         case "return-stmt":
             var root = find_root(ctx, "foreach-stmt");
             var clean;
@@ -172,11 +193,17 @@ var generate = function(node, opt, ctx, join) {
             var values = "";
 
             for (var i = 0; i < node.values.length; i++) {
-                values += "value" + i + "=" + generate(node.values[i], opt, nxt) + ";";
+                values += ".____newitem(" + generate(node.values[i], opt, nxt) + ")";
             }
 
-            return "new ScriptObject(){class=\"Vec\";length=" +
-                node.values.length + ";" + values + "}";
+            return "____newvec()" + values;
+
+            // for (var i = 0; i < node.values.length; i++) {
+            //     values += "value" + i + "=" + generate(node.values[i], opt, nxt) + ";";
+            // }
+            //
+            // return "new ScriptObject(){class=\"Vec\";length=" +
+            //     node.values.length + ";" + values + "}";
         case "create-map":
             console.log(JSON.stringify(node, null, 4));
             var values = "";

@@ -1,3 +1,18 @@
+// For converted constructors
+// ============
+function ____newvec() {
+    return new ScriptObject() {
+        class = "Vec";
+        length = 0;
+    };
+}
+function Vec::____newitem(%this, %value) {
+    %this.value[%this.length] = %value;
+    %this.length++;
+    return %this; // important
+}
+// ============
+
 function Vec::_get_array(%this, %index) {
     return %this.value[%index];
 }
@@ -35,6 +50,14 @@ function Vec::push(%this, %value) {
     %this.length++;
 }
 
+function Vec::push_all(%this, %iter) {
+    while (iter_next(%iter)) {
+        %this.push($iter_value[%iter]);
+    }
+
+    iter_drop(%iter);
+}
+
 function Vec::pop(%this) {
     if (%this.length < 1) {
         return "";
@@ -54,7 +77,7 @@ function Vec::insert(%this, %index, %value) {
     for (%i = %this.length; %i > %index; %i--) {
         %this.value[%i] = %this.value[%i - 1];
     }
-    
+
     %this.value[%index] = %value;
     %this.length++;
 }

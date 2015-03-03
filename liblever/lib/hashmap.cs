@@ -1,3 +1,17 @@
+// For converted constructors
+// ============
+function ____newhashmap() {
+    return new ScriptObject() {
+        class = "HashMap";
+    };
+}
+function HashMap::____newpair(%this, %key, %value) {
+    %this.keys.push(%key);
+    %this.value[sha1(%key)] = %value;
+    return %this; // important
+}
+// ============
+
 function HashMap::onAdd(%this) {
     %this.keys = new ScriptObject() {
         class = "Vec";
@@ -7,18 +21,6 @@ function HashMap::onAdd(%this) {
 
 function HashMap::onRemove(%this) {
     %this.keys.delete();
-}
-
-function ____newhashmap() {
-    return new ScriptObject() {
-        class = "HashMap";
-    };
-}
-
-function HashMap::____newpair(%this, %key, %value) {
-    %this.keys.push(%key);
-    %this.value[sha1(%key)] = %value;
-    return %this; // important
 }
 
 function HashMap::_get_array(%this, %key) {

@@ -1,9 +1,7 @@
 fn anon() {
     vec = [1, 2, 3];
 
-    for num in vec.iter().map(n => n*2) {
-        echo(num);
-    }
+    vec.iter().map(n => n*2).each("echo");
 
     vec.delete();
 
