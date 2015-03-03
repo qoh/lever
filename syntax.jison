@@ -243,14 +243,20 @@ constant_value
         { $$ = {type: "lambda", "args": [$1], "body": $3}; }
     | '(' ')' '=>' block_non_empty
         { $$ = {type: "lambda", "args": [], "body": $4}; }
-    // | '(' ident_list ')' '=>' block
-    //     { $$ = {type: "lambda", "args": $2, "body": $5}; }
+    // FIXME:
+    // replacing '<' '>' with '(' ')' as intended causes reduce/reduce conflict
+    // using <> instead is just a temporary hack
+    | '<' ident_list '>' '=>' block_non_empty
+        { $$ = {type: "lambda", "args": $3, "body": $5}; }
     | var_local '=>' expr
         { $$ = {type: "lambda", "args": [$1], "body": [{"type": "return-stmt", "expr": $3}]}; }
     | '(' ')' '=>' expr
         { $$ = {type: "lambda", "args": [], "body": [{"type": "return-stmt", "expr": $4}]}; }
-    // | '(' ident_list ')' '=>' expr
-    //     { $$ = {type: "lambda", "args": $2, "body": [{"type": "return-stmt", "expr": $5}]}; }
+    // FIXME:
+    // replacing '<' '>' with '(' ')' as intended causes reduce/reduce conflict
+    // using <> instead is just a temporary hack
+    | '<' ident_list '>' '=>' expr
+        { $$ = {type: "lambda", "args": $2, "body": [{"type": "return-stmt", "expr": $5}]}; }
     | '[' expr_list ']'
         { $$ = {"type": "create-vec", "values": $2}; }
     | '{' map_pair_list '}'
