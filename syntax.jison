@@ -48,6 +48,8 @@ fn_decl
         { $$ = {type: "fn-stmt", name: $2, args: $4, body: $6}; }
     | 'fn' var_local '(' ')' block
         { $$ = {type: "fn-stmt", name: $2, args: [], body: $5}; }
+    | 'scoped' 'fn' var_local '(' ident_list ')' block
+        { $$ = {type: "fn-stmt", name: $3, args: $5, body: $7, scoped: true}; }
     | 'fn' var_local block
         { $$ = {type: "fn-stmt", name: $2, args: [], body: $3}; }
     | 'fn' var_local '::' var_local '(' ident_list ')' block

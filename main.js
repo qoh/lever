@@ -4,7 +4,19 @@ var crypto = require("crypto");
 
 var parser = require("./syntax").parser;
 
-var find_root = function(ctx, type) {
+var find_predicate = function(ctx, pred) {
+    while (ctx !== undefined) {
+        if (ctx.node !== undefined && pred(ctx.node)) {
+            return ctx;
+        } else {
+            ctx = ctx.from;
+        }
+    }
+
+    return null;
+};
+
+var find_root = function(ctx, type, anyway) {
     if (type === undefined || type === null) {
         while (ctx.from !== undefined) {
             ctx = ctx.from;
@@ -14,7 +26,7 @@ var find_root = function(ctx, type) {
     }
 
     while (ctx !== undefined) {
-        if (ctx.node !== undefined && ctx.node.type == "lambda") {
+        if (!anyway && ctx.node !== undefined && ctx.node.type == "lambda") {
             break;
         }
 
@@ -60,10 +72,16 @@ var generate = function(node, opt, ctx, join) {
             var name = node.name;
             var args = node.args;
 
+            var scoped = false;
+
             if (root !== null) {
                 name = root.node.name + "::" + name;
                 args = args.slice(0);
                 args.unshift("this");
+
+                if (scoped) {
+                    args.unshift("%____scope");
+                }
             }
 
             var str = "";
@@ -72,8 +90,20 @@ var generate = function(node, opt, ctx, join) {
                 str += (i > 0 ? ", " : "") + "%" + args[i];
             }
 
+            var addl = "";
+            var addr = "";
+
+            if (node.scoped) {
+                addl += "%____scope=LeverScope(%____scope);";
+                addr += "%____scope.drop();";
+
+                for (var i = 0; i < args.length; i++) {
+                    addl += "%____scope." + args[i] + "=%" + args[i] + ";";
+                }
+            }
+
             return "function " + name + "(" + str + ")" +
-                " {\n" + generate(node.body, opt, nxt, "\n") + "\n}\n";
+                " {\n" + addl + generate(node.body, opt, nxt, "\n") + addr + "\n}\n";
         case "class-decl":
             var ctor = "function " + node.name + "(" +
                 "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {\n" +
@@ -142,7 +172,13 @@ var generate = function(node, opt, ctx, join) {
             } else if (node.scope !== undefined) {
                 return node.scope + "::" + node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
             } else {
-                return node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
+                if (node.name == "call" && node.args.length >= 1) {
+                  var name = "__lever_call" + Math.min(18, Math.max(0, node.args.length - 1));
+                  return name + "(" + generate(node.args, opt, nxt, ", ") + ")";
+                }
+                else {
+                  return node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
+                }
             }
         case "new-object":
             return "new " + node.class + "(" + generate(node.args, opt, nxt, ", ") + ")";
@@ -159,7 +195,17 @@ var generate = function(node, opt, ctx, join) {
         case "array-set":
             return generate(node.expr, opt, nxt) + "._set_array(" + generate(node.array, opt, nxt) + ", " + generate(node.rhs, opt, nxt) + ")";
         case "variable":
-            return (node.global ? "$" : "%") + node.name;
+            if (node.global == "$") {
+                return "$" + node.name;
+            }
+
+            var fn = find_root(ctx, "fn-stmt", true);
+
+            if (fn !== null && fn.node.scoped) {
+                return "%____scope." + node.name;
+            }
+
+            return "%" + node.name;
         case "identifier":
             return node.name;
         case "constant":
@@ -184,6 +230,13 @@ var generate = function(node, opt, ctx, join) {
             var name = "___anonymous_" + sha1.digest("hex");
             var args = "";
 
+            var fn = find_root(ctx, "fn-stmt");
+            var scoped = fn !== null && fn.node.scoped;
+
+            if (scoped) {
+              node.args.unshift("____scope");
+            }
+
             for (var i = 0; i < node.args.length; i++) {
                 args += (i > 0 ? ", " : "") + "%" + node.args[i];
             }
@@ -191,6 +244,10 @@ var generate = function(node, opt, ctx, join) {
             root.inject += "function " + name +
                 "(" + args + ")" +
                 " {\n" + generate(node.body, opt, nxt, "\n") + "\n}\n\n";
+
+            if (scoped) {
+              return "LeverClosure(%____scope, \"" + name + "\")";
+            }
 
             return "\"" + name + "\"";
         case "create-vec":
@@ -202,7 +259,7 @@ var generate = function(node, opt, ctx, join) {
 
             return "____newvec()" + values;
         case "create-map":
-            console.log(JSON.stringify(node, null, 4));
+            //console.log(JSON.stringify(node, null, 4));
             var values = "";
 
             for (var i = 0; i < node.pairs.length; i++) {

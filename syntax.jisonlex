@@ -46,6 +46,7 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 "!"                         return yytext;
 "~"                         return yytext;
 
+"scoped"                    return 'scoped';
 "fn"                        return 'fn';
 "new"                       return 'new';
 "class"                     return 'class';
