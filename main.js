@@ -47,10 +47,10 @@ var generate = function(node, opt, ctx, join) {
 
     switch (node.type) {
         case "package-decl":
-            var ts = "package " + node.name + "{" + generate(node.body, opt, nxt) + "};";
+            var ts = "package " + node.name + " {\n" + generate(node.body, opt, nxt, "\n") + "\n};\n";
 
             if (node.active) {
-                ts += "activatePackage(" + node.name + ");"
+                ts += "\nactivatePackage(" + node.name + ");\n"
             }
 
             return ts;
@@ -69,28 +69,28 @@ var generate = function(node, opt, ctx, join) {
             var str = "";
 
             for (var i = 0; i < args.length; i++) {
-                str += (i > 0 ? "," : "") + "%" + args[i];
+                str += (i > 0 ? ", " : "") + "%" + args[i];
             }
 
             return "function " + name + "(" + str + ")" +
-                "{" + generate(node.body, opt, nxt) + "}";
+                " {\n" + generate(node.body, opt, nxt, "\n") + "\n}\n";
         case "class-decl":
             var ctor = "function " + node.name + "(" +
-                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s){" +
-                "%z=new ScriptObject(){class=\"" + node.name + "\";superCla" +
-                "ss=\"Class\";____inst=1;};if(isFunction(\"" + node.name +
-                "\",\"onNew\"))%z.onNew(" +
-                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" +
-                "return %z;}";
-            return "if(!isObject(" + node.name + "))new ScriptObject(" +
-                node.name + "){class=\"Class\";____inst=0;};" + ctor +
-                generate(node.body, opt, nxt);
+                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {\n" +
+                "%z = new ScriptObject() {\nclass = \"" + node.name + "\";\nsuperCla" +
+                "ss = \"Class\";\n____inst=1;\n};\nif(isFunction(\"" + node.name +
+                "\", \"onNew\"))\n%z.onNew(" +
+                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);\n" +
+                "return %z;\n}\n\n";
+            return "\nif(!isObject(" + node.name + "))\nnew ScriptObject(" +
+                node.name + ") {\nclass = \"Class\";\n____inst = 0;\n};\n\n" + ctor +
+                generate(node.body, opt, nxt, "\n");
         case "return-stmt":
             var root = find_root(ctx, "foreach-stmt");
             var clean;
 
             if (root !== null) {
-                clean = "iter_drop(" + root.ref + ");"
+                clean = "iter_drop(" + root.ref + ");\n"
             } else {
                 clean = "";
             }
@@ -104,12 +104,12 @@ var generate = function(node, opt, ctx, join) {
             return "break;";
         case "if-stmt":
             if (node.else !== null) {
-                return "if(" + generate(node.cond, opt, nxt) + ")" +
-                    "{" + generate(node.body, opt, nxt) + "}" +
-                    "else " + generate(node.else, opt, nxt);
+                return "if (" + generate(node.cond, opt, nxt) + ")" +
+                    " {\n" + generate(node.body, opt, nxt) + "\n} " +
+                    "else {\n" + generate(node.else, opt, nxt, "\n") + "\n}";
             } else {
-                return "if(" + generate(node.cond, opt, nxt) + ")" +
-                    "{" + generate(node.body, opt, nxt) + "}";
+                return "if (" + generate(node.cond, opt, nxt) + ")" +
+                    " {\n" + generate(node.body, opt, nxt) + "\n}";
             }
         case "foreach-stmt":
             var root = find_root(ctx, "foreach-stmt");
@@ -123,12 +123,14 @@ var generate = function(node, opt, ctx, join) {
 
             nxt.ref = ref;
 
-            return ref + "=" + generate(node.iter, opt, nxt) + ";" +
-                "while(iter_next(" + ref +")){" + generate(node.bind, opt, nxt) +
-                "=$iter_value[" + ref + "];" + generate(node.body, opt, nxt) + "}" +
-                "iter_drop(" + ref + ");";
+            return ref + "=" + generate(node.iter, opt, nxt) + ";\n" +
+                "while(iter_next(" + ref +")) {\n" + generate(node.bind, opt, nxt) +
+                " = $iter_value[" + ref + "];\n" + generate(node.body, opt, nxt, "\n") + "\n}\n" +
+                "iter_drop(" + ref + ");\n";
+        case "while-stmt":
+            return "while(" + generate(node.cond, opt, nxt) + ") {\n" + generate(node.body, opt, nxt, "\n") + "\n}\n";
         case "loop-stmt":
-            return "while(1){" + generate(node.body, opt, nxt) + "}";
+            return "while(1) {\n" + generate(node.body, opt, nxt, "\n") + "\n}\n";
         case "expr-stmt":
             return generate(node.expr, opt, nxt) + ";";
         case "expr-expr":
@@ -136,24 +138,26 @@ var generate = function(node, opt, ctx, join) {
         case "call":
             if (node.target !== undefined) {
                 return generate(node.target, opt, nxt) + "." + node.name +
-                    "(" + generate(node.args, opt, nxt, ",") + ")";
+                    "(" + generate(node.args, opt, nxt, ", ") + ")";
             } else if (node.scope !== undefined) {
-                return node.scope + "::" + node.name + "(" + generate(node.args, opt, nxt, ",") + ")";
+                return node.scope + "::" + node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
             } else {
-                return node.name + "(" + generate(node.args, opt, nxt, ",") + ")";
+                return node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
             }
+        case "new-object":
+            return "new " + node.class + "(" + generate(node.args, opt, nxt, ", ") + ")";
         case "macro-call":
             return "macro_call()";
         case "assign":
-            return generate(node.var, opt, nxt) + "=" + generate(node.rhs, opt, nxt);
+            return generate(node.var, opt, nxt) + " = " + generate(node.rhs, opt, nxt);
         case "field-get":
             return generate(node.expr, opt, nxt) + "." + node.name;
         case "array-get":
             return generate(node.expr, opt, nxt) + "._get_array(" + generate(node.array, opt, nxt) + ")";
         case "field-set":
-            return generate(node.expr, opt, nxt) + "." + node.name + "=" + generate(node.rhs, opt, nxt);
+            return generate(node.expr, opt, nxt) + "." + node.name + " = " + generate(node.rhs, opt, nxt);
         case "array-set":
-            return generate(node.expr, opt, nxt) + "._set_array(" + generate(node.array, opt, nxt) + "," + generate(node.rhs, opt, nxt) + ")";
+            return generate(node.expr, opt, nxt) + "._set_array(" + generate(node.array, opt, nxt) + ", " + generate(node.rhs, opt, nxt) + ")";
         case "variable":
             return (node.global ? "$" : "%") + node.name;
         case "identifier":
@@ -166,9 +170,9 @@ var generate = function(node, opt, ctx, join) {
                 case "boolean": return node.value == "true" ? "1" : "0";
             }
         case "binary":
-            return generate(node.lhs, opt, nxt) + node.op + generate(node.rhs, opt, nxt);
+            return generate(node.lhs, opt, nxt) + " " + node.op + " " + generate(node.rhs, opt, nxt);
         case "unary":
-            return node.op + generate(node.rhs, opt, nxt);
+            return node.op + generate(node.expr, opt, nxt);
         case "ts-fence-expr":
             return node.code;
         case "lambda":
@@ -181,12 +185,12 @@ var generate = function(node, opt, ctx, join) {
             var args = "";
 
             for (var i = 0; i < node.args.length; i++) {
-                args += (i > 0 ? "," : "") + "%" + node.args[i];
+                args += (i > 0 ? ", " : "") + "%" + node.args[i];
             }
 
             root.inject += "function " + name +
                 "(" + args + ")" +
-                "{" + generate(node.body, opt, nxt) + "}";
+                " {\n" + generate(node.body, opt, nxt, "\n") + "\n}\n\n";
 
             return "\"" + name + "\"";
         case "create-vec":
@@ -197,26 +201,19 @@ var generate = function(node, opt, ctx, join) {
             }
 
             return "____newvec()" + values;
-
-            // for (var i = 0; i < node.values.length; i++) {
-            //     values += "value" + i + "=" + generate(node.values[i], opt, nxt) + ";";
-            // }
-            //
-            // return "new ScriptObject(){class=\"Vec\";length=" +
-            //     node.values.length + ";" + values + "}";
         case "create-map":
             console.log(JSON.stringify(node, null, 4));
             var values = "";
 
             for (var i = 0; i < node.pairs.length; i++) {
                 values += ".____newpair(" + generate(node.pairs[i][0], opt, nxt) +
-                    "," + generate(node.pairs[i][1], opt, nxt) + ")";
+                    ", " + generate(node.pairs[i][1], opt, nxt) + ")";
             }
 
             return "____newhashmap()" + values;
     }
 
-    return "<< " + node.type + " " + JSON.stringify(ctx.node, " ") + " >>";
+    return "<< " + node.type + " " + JSON.stringify(node, " ") + " >>";
 };
 
 var convert = function(source) {

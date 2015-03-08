@@ -42,6 +42,19 @@ function HashMap::_set_array(%this, %key, %value) {
     %this.value[sha1(%key)] = %value;
 }
 
+function HashMap::copy(%this) {
+    %copy = new ScriptObject() {
+        class = "HashMap";
+    };
+
+    for (%i = 0; %i < %this.keys.length; %i++) {
+        %key = %this.keys.value[%i];
+        %copy._set_array(%key, %this.value[sha1(%key)]);
+    }
+
+    return %copy;
+}
+
 function HashMap::clear(%this) {
     for (%i = 0; %i < %this.keys.length; %i++) {
         %this.value[sha1(%this.keys.value[%i])] = "";
@@ -70,6 +83,35 @@ function HashMap::remove(%this, %key) {
     }
 
     return 0;
+}
+
+function HashMap::exists(%this, %key) {
+    for (%i = 0; %i < %this.keys.length; %i++) {
+        if (strcmp(%key, %this.keys.value[%i]) == 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+function HashMap::patch(%this, %map) {
+    for (%i = 0; %i < %map.keys.length; %i++) {
+        %key = %map.keys.value[%i];
+        %this.set(%key, %map.value[sha1(%key)]);
+    }
+}
+
+function HashMap::patch_into(%this, %map) {
+    for (%i = 0; %i < %map.keys.length; %i++) {
+        %key = %map.keys.value[%i];
+
+        if (!%this.exists(%key)) {
+            %hash = sha1(%key);
+            %this.keys.push(%key);
+            %this.value[%hash] = %map.value[%hash];
+        }
+    }
 }
 
 function HashMap::pairs(%this) {

@@ -13,6 +13,10 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 
 "=="                        return yytext;
 "!="                        return yytext;
+"$="                        return yytext;
+"!$="                       return yytext;
+"||"                        return yytext;
+"&&"                        return yytext;
 "<="                        return yytext;
 ">="                        return yytext;
 "<"                         return yytext;
@@ -43,6 +47,7 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 "~"                         return yytext;
 
 "fn"                        return 'fn';
+"new"                       return 'new';
 "class"                     return 'class';
 "return"                    return 'return';
 "break"                     return 'break';
@@ -61,7 +66,7 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 {digit}+"."{digit}+         return 'float';
 "\""[\w\W]*?"\""            return 'string';
 "true"|"false"              return 'boolean';
-"#"{ident}                  return 'var_global';
+"$"{ident}                  return 'var_global';
 {ident}"!"                  return 'macro_name';
 {ident}                     return 'var_local';
 "`"[^`]*"`"                 return 'ts_fence';
