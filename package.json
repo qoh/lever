@@ -1,0 +1,37 @@
+{
+	"name": "Lever",
+	"version": "0.0.2",
+	"description": "A to-Torquescript transpiler for Blockland",
+	"author": "Port <im gay@fart.supplies>",
+	"contributors": [
+		{
+			"name": "Port",
+			"email": "im gay@fart.supplies"
+		},
+		{
+			"name": "das Clockler",
+			"email": "hello@clockler.com"
+		}
+	],
+	"bin": {
+		"lever": "./main.js"
+	},
+	"main": "main.js",
+	"scripts": {},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/portify/lever"
+	},
+	"bugs": {
+		"url": "https://github.com/portify/lever/issues"
+	},
+	"dependencies": {
+		"minimist": "1.x"
+	},
+	"devDependencies": {
+		"jison": "*"
+	},
+	"preferGlobal": true,
+
+	"license": "MIT"
+}

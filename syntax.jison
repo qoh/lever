@@ -9,7 +9,7 @@
 %left '&'
 %left '==' '!=' '$=' '!$='
 %left '<' '<=' '>' '>='
-%left '..' '...' '@'
+%left '..' '...' '@' 'SPC' 'TAB' 'NL'
 %left '<<' '>>'
 %left '+' '-'
 %left '*' '/' '%'
@@ -209,6 +209,12 @@ expr
     | expr '%' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '@' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr 'SPC' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr 'TAB' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr 'NL' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '..' expr
         {
