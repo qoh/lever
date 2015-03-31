@@ -65,6 +65,19 @@ Parenting is done by simply calling `Parent` regardless of the function:
         }
     };
 
+### Classes
+
+Closer to first-class support for Classes is a planned feature, but is currently broken.
+
+### Fenced TorqueScript Code
+
+If you need to just write some raw TorqueScript, you can do so:
+
+    for i in 0..mg.numMembers {
+        `%mb = %mg.member[%i]`;
+        messageClient(mb, '', "nope");
+    }
+
 ## API
 
 Lever can also be required as a Node module.
