@@ -9,7 +9,7 @@
 %left '&'
 %left '==' '!=' '$=' '!$='
 %left '<' '<=' '>' '>='
-%left '..' '...' '@'
+%left '..' '...' '@' 'SPC' 'TAB' 'NL'
 %left '<<' '>>'
 %left '+' '-'
 %left '*' '/' '%'
@@ -210,6 +210,12 @@ expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '@' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr 'SPC' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr 'TAB' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr 'NL' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '..' expr
         {
             $$ = {
@@ -254,6 +260,8 @@ constant_value
         { $$ = {type: "constant", what: "float", value: $1}; }
     | 'string'
         { $$ = {type: "constant", what: "string", value: $1.substring(1, $1.length-1)}; }
+    | 'tagged_string'
+        { $$ = {type: "constant", what: "tagged_string", value: $1.substring(1, $1.length-1)}; }
     | 'boolean'
         { $$ = {type: "constant", what: "boolean", value: $1}; }
     // Sugar constructors

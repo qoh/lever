@@ -39,7 +39,7 @@ fn /start {
 
 // active package TestPac {
 //     fn /MessageSent (text) {
-//         parent::serverCmdMessageSent(client, text);
+//         parent(client, text);
 //         echo("What's this -> " @ text);
 //     }
 // }
