@@ -15,7 +15,25 @@ Lever is a tool designed to make Blockland development better. It consists of th
 
 ### Basic Usage
 
+`lever [command] [args]`
 
+Global switches:
+
+* -s, --silent: Suppress all non-erroneous console output.
+* -h, --help: Get help with the given command. (unimplemented)
+
+Commands:
+
+* `compile`: Compile a given set of files. If no valid command is supplied, defaults to this.
+  * `-c, --compact`: Omit all unnecessary whitespace.
+  * `-o, --out`: Write all output to the given file instead of individual files.
+* `init | new`: Create a skeleton for a new add-on. (unimplemented)
+  * `-t, --title`: Pre-supply a title for the add-on. Defaults to the current working directory's name.
+  * `-a, --author`: Pre-supply an author for the add-on. Defaults to the USERNAME environment variable.
+  * `-d, --desc`: Pre-supply a description for the add-on.
+* `build | package`: Package the current project into an Add-On. (unimplemented)
+  * `-c, --compact`: As with compile.
+  * `-o, --out`: Output to the given file instead of the default zip.
 
 ## Syntax
 
@@ -67,7 +85,24 @@ Parenting is done by simply calling `Parent` regardless of the function:
 
 ### Classes
 
-Closer to first-class support for Classes is a planned feature, but is currently broken.
+DISCLAIMER: Example here is slightly broken - class properties cannot be declared like this yet.
+
+Lever has closer to first-class support for Classes:
+
+    class Foo {
+        author = "RoboCop";
+
+        fn onNew(n) {
+            this.n = n;
+        }
+
+        fn inc {
+            this.n++;
+        }
+    }
+
+    x = Foo::create();
+    x.inc();
 
 ### Fenced TorqueScript Code
 
@@ -80,6 +115,14 @@ If you need to just write some raw TorqueScript, you can do so:
 
 ## API
 
-Lever can also be required as a Node module.
+Lever supports a robust API through NodeJS:
 
-//TODO: Write usage documentation (and improve API).
+`require("lever")(source, options)`
+
+Current options:
+
+* compact: Remove unnecessary whitespace. Defaults to false (pass switch `-c` or `--compact`).
+
+
+
+//TODO: Improve API.
