@@ -1,7 +1,7 @@
 var fs = require("fs"),
     path = require("path"),
     crypto = require("crypto"),
-    parser = require("./syntax").parser;
+    parser = require("./syntax.js").parser;
 
 function find_predicate(ctx, pred) {
     while (ctx !== undefined) {

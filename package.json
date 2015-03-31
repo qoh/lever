@@ -14,7 +14,7 @@
 		}
 	],
 	"bin": {
-		"lever": "./main.js"
+		"lever": "./cli.js"
 	},
 	"main": "main.js",
 	"scripts": {},
