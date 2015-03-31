@@ -260,6 +260,8 @@ constant_value
         { $$ = {type: "constant", what: "float", value: $1}; }
     | 'string'
         { $$ = {type: "constant", what: "string", value: $1.substring(1, $1.length-1)}; }
+    | 'tagged_string'
+        { $$ = {type: "constant", what: "tagged_string", value: $1.substring(1, $1.length-1)}; }
     | 'boolean'
         { $$ = {type: "constant", what: "boolean", value: $1}; }
     // Sugar constructors

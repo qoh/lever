@@ -69,6 +69,7 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 {digit}+                    return 'integer';
 {digit}+"."{digit}+         return 'float';
 "\""[\w\W]*?"\""            return 'string';
+"'"[\w\W]*?"'"              return 'tagged_string';
 "true"|"false"              return 'boolean';
 "$"{ident}                  return 'var_global';
 {ident}"!"                  return 'macro_name';

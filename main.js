@@ -236,6 +236,7 @@ function generate(node, opt, ctx, join) {
                 case "integer": return node.value;
                 case "float": return node.value;
                 case "string": return "\"" + node.value + "\"";
+                case "tagged_string": return "'" + node.value + "'";
                 case "boolean": return node.value == "true" ? "1" : "0";
             }
             break;
