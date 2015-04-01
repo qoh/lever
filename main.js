@@ -64,8 +64,44 @@ function generate(node, opt, ctx, join) {
     }
 
     switch (node.type) {
+        case "datablock-decl":
+            var ts = "datablock " + node.datatype + "(" + node.name + ") {" +
+                wsn;
+
+            var state = 0;
+
+            for (var i = 0; i < node.body.length; i++) {
+                if (node.body[i] instanceof Array) {
+                    var obj = node.body[i];
+
+                    ts += obj[0].value + " = " + generate(obj[1], opt, nxt) +
+                        ";" + wsn;
+                }
+                else {
+                    if (node.body[i] instanceof Object) {
+                        if (node.body[i].type == "state-decl") {
+                            var obj = node.body[i];
+
+                            ts += "stateName[" + state + "] = \"" + obj.name +
+                                "\";" + wsn;
+
+                            for (var j = 0 ; j < obj.data.length; j++) {
+                                ts += "state" + obj.data[j][0].value +
+                                    "[" + state + "] = " +
+                                    generate(obj.data[j][1], opt, nxt) + ";" +
+                                    wsn;
+                            }
+                        }
+                    }
+                }
+            }
+
+            ts += wsn + "};" + wsn;
+
+            return ts;
         case "package-decl":
-            var ts = "package " + node.name + " {" + wsn + generate(node.body, opt, nxt, wsn) + wsn + "};" + wsn;
+            var ts = "package " + node.name + " {" + wsn +
+                generate(node.body, opt, nxt, wsn) + wsn + "};" + wsn;
 
             if (node.active) {
                 ts += wsn + "activatePackage(" + node.name + ");" + wsn;

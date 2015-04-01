@@ -64,7 +64,9 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 "while"                     return 'while';
 "package"                   return 'package';
 "active"                    return 'active';
-"datablock"                 return 'datablock';
+"data"                      return 'data';
+"state"                     return 'state';
+
 
 {digit}+                    return 'integer';
 {digit}+"."{digit}+         return 'float';

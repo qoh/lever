@@ -37,6 +37,8 @@ decl
         { $$ = $1; }
     | class_decl
         { $$ = $1; }
+    | datablock_decl
+        { $$ = $1; }
     | 'package' var_local block_fn_only
         { $$ = {type: "package-decl", name: $2, body: $3, active: false}; }
     | 'active' 'package' var_local block_fn_only
@@ -81,6 +83,25 @@ fn_decl_list
 class_decl
     : 'class' var_local block_fn_only
         { $$ = {type: "class-decl", name: $2, body: $3}; }
+    ;
+
+datablock_decl
+    : 'data' var_local var_local '{' datablock_pair_list '}'
+        { $$ = {type: "datablock-decl", datatype: $2, name: $3, body: $5}; }
+    ;
+
+datablock_pair_list
+    : datablock_pair
+        { $$ = [$1]; }
+    | datablock_pair_list ',' datablock_pair
+        { $$ = $1; $1.push($3); }
+    ;
+
+datablock_pair
+    : 'state' var_local '{' map_pair_list '}'
+        { $$ = { type: "state-decl", name: $2, data: $4 }; }
+    | map_pair
+        { $$ = $1; }
     ;
 
 // block
@@ -302,6 +323,8 @@ map_pair
     : var_local ':' expr
         { $$ = [{type: "constant", what: "string", value: $1}, $3]; }
     | 'string' ':' expr
+        { $$ = [{type: "constant", what: "string", value: $1.substring(1, $1.length-1)}, $3]; }
+    | 'tagged_string' ':' expr
         { $$ = [{type: "constant", what: "string", value: $1.substring(1, $1.length-1)}, $3]; }
     ;
 
