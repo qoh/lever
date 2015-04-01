@@ -324,9 +324,6 @@ map_pair
         { $$ = [{type: "constant", what: "string", value: $1}, $3]; }
     | 'string' ':' expr
         { $$ = [{type: "constant", what: "string", value: $1.substring(1, $1.length-1)}, $3]; }
-    | 'tagged_string' ':' expr
-        { $$ = [{type: "constant", what: "string", value: $1.substring(1, $1.length-1)}, $3]; }
-    ;
 
 stmt_expr
     : var '=' expr
