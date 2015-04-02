@@ -50,7 +50,7 @@ commands.new = function(args, opts) {
 
 	var addon = args[0];
 
-	if (addon.split('_').length != 2) {
+	if (addon.split('_').length < 2) {
 		console.error("Add-On names must be formatted as: Type_Name");
 		return;
 	}
