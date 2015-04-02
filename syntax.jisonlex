@@ -1,5 +1,6 @@
 digit                       [0-9]
 ident                       [a-zA-Z_][a-zA-Z_0-9]*
+namespaceident              [a-zA-Z_][a-zA-Z_0-9:]*
 
 %%
 
@@ -64,16 +65,17 @@ ident                       [a-zA-Z_][a-zA-Z_0-9]*
 "while"                     return 'while';
 "package"                   return 'package';
 "active"                    return 'active';
-"data"                      return 'data';
+"datablock"                      return 'datablock';
 "state"                     return 'state';
+"use"                       return 'use';
 
 
-{digit}+                    return 'integer';
 {digit}+"."{digit}+         return 'float';
+{digit}+                    return 'integer';
 "\""[\w\W]*?"\""            return 'string';
 "'"[\w\W]*?"'"              return 'tagged_string';
 "true"|"false"              return 'boolean';
-"$"{ident}                  return 'var_global';
+"$"{namespaceident}         return 'var_global';
 {ident}"!"                  return 'macro_name';
 {ident}                     return 'var_local';
 "`"[^`]*"`"                 return 'ts_fence';

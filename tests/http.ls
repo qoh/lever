@@ -40,7 +40,7 @@ class HTTPServer {
         this.socket.listen(port);
     }
 
-    fn use(handler) {
+    fn _use(handler) {
         this.handlers.push(handler);
     }
 
@@ -49,7 +49,7 @@ class HTTPServer {
         scope.path = path;
         scope.handler = handler;
 
-        this.use(LeverClosure(scope, fn (scope, req, res) {
+        this._use(LeverClosure(scope, fn (scope, req, res) {
             if req.method $= "GET" && req.path_matches(scope.path) {
                 call(scope.handler, req, res);
                 return true;

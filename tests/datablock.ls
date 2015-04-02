@@ -1,11 +1,11 @@
-data ShapeBaseImageData MyImage {
+datablock ShapeBaseImageData MyImage {
     state Activate {
-        sound = EquipWeaponSound;
-        timeoutValue = 0.25;
-        transitionOnTimeout = "Ready";
-    }
+        sound: @EquipWeaponSound,
+        timeoutValue: 0.25,
+        transitionOnTimeout: "Ready"
+    },
     state Ready {
-        sound = DoneSound;
-        timeoutValue = 123;
+        sound: @DoneSound,
+        timeoutValue: 123
     }
 }

@@ -3,7 +3,7 @@ fn add(a, b) {
     return a + b;
 }
 
-fn data() {
+fn data(a) {
     users = [
         { name: "Foo", age: 17 },
         { name: "Bar", age: 13, xp: 32 },

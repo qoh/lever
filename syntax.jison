@@ -86,7 +86,7 @@ class_decl
     ;
 
 datablock_decl
-    : 'data' var_local var_local '{' datablock_pair_list '}'
+    : 'datablock' var_local var_local '{' datablock_pair_list '}'
         { $$ = {type: "datablock-decl", datatype: $2, name: $3, body: $5}; }
     ;
 
@@ -131,6 +131,8 @@ stmt_list
 stmt
     : stmt_expr ';'
         { $$ = {type: "expr-stmt", expr: $1}; }
+    | 'use' expr ';'
+        { $$ = {type: "use-stmt", file: $2}; }
     | 'return' ';'
         { $$ = {type: "return-stmt", expr: null}; }
     | 'return' expr ';'
