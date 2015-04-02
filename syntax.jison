@@ -37,6 +37,8 @@ decl
         { $$ = $1; }
     | class_decl
         { $$ = $1; }
+    | datablock_decl
+        { $$ = $1; }
     | 'package' var_local block_fn_only
         { $$ = {type: "package-decl", name: $2, body: $3, active: false}; }
     | 'active' 'package' var_local block_fn_only
@@ -83,6 +85,25 @@ class_decl
         { $$ = {type: "class-decl", name: $2, body: $3}; }
     ;
 
+datablock_decl
+    : 'datablock' var_local var_local '{' datablock_pair_list '}'
+        { $$ = {type: "datablock-decl", datatype: $2, name: $3, body: $5}; }
+    ;
+
+datablock_pair_list
+    : datablock_pair
+        { $$ = [$1]; }
+    | datablock_pair_list ',' datablock_pair
+        { $$ = $1; $1.push($3); }
+    ;
+
+datablock_pair
+    : 'state' var_local '{' map_pair_list '}'
+        { $$ = { type: "state-decl", name: $2, data: $4 }; }
+    | map_pair
+        { $$ = $1; }
+    ;
+
 // block
 //     : '{' '}'
 //         { $$ = []; }
@@ -110,6 +131,8 @@ stmt_list
 stmt
     : stmt_expr ';'
         { $$ = {type: "expr-stmt", expr: $1}; }
+    | 'use' expr ';'
+        { $$ = {type: "use-stmt", file: $2}; }
     | 'return' ';'
         { $$ = {type: "return-stmt", expr: null}; }
     | 'return' expr ';'

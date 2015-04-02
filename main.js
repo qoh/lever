@@ -64,6 +64,72 @@ function generate(node, opt, ctx, join) {
     }
 
     switch (node.type) {
+        case "use-stmt":
+            var file = node.file;
+
+            if (file.type == "constant") {
+                file = file.value;
+            }
+            else {
+                file = generate(file, opt, nxt);
+            }
+
+            file += ".ls.cs";
+
+            if (file.substring(0, 1) == "~") {
+                file = "$Con::File @ \"" + file.substring(1) + "\"";
+            }
+            else if (file.substring(0, 1) == "/") {
+                file = "\"" + file.substring(1) + "\"";
+            }
+            else {
+                if (file.substring(0, 2) != "./")
+                    file = "\"./" + file + "\"";
+                else
+                    file = "\"" + file + "\"";
+            }
+
+            return "liblever_exec(" + file + ");" + wsn;
+
+        case "datablock-decl":
+            var ts = "datablock " + node.datatype + "(" + node.name + ") {" + wsn;
+
+            var state = 0;
+
+            for (var i = 0; i < node.body.length; i++) {
+                if (node.body[i] instanceof Array) {
+                    var obj = node.body[i];
+
+                    if (obj[1].type == "create-vec") {
+                        for (var j = 0; j < obj[1].values.length; j++) {
+                            ts += obj[0].value + "[" + j + "] = " + generate(obj[1].values[j], opt, nxt) + ";" + wsn;
+                        }
+                    }
+                    else {
+                        ts += obj[0].value + " = " + generate(obj[1], opt, nxt) + ";" + wsn;
+                    }
+                }
+                else {
+                    if (node.body[i] instanceof Object) {
+                        if (node.body[i].type == "state-decl") {
+                            var obj = node.body[i];
+
+                            ts += "stateName[" + state + "] = \"" + obj.name + "\";" + wsn;
+
+                            for (var j = 0 ; j < obj.data.length; j++) {
+                                ts += "state" + obj.data[j][0].value + "[" + state + "] = " +
+                                    generate(obj.data[j][1], opt, nxt) + ";" + wsn;
+                            }
+
+                            state += 1;
+                        }
+                    }
+                }
+            }
+
+            ts += wsn + "};" + wsn;
+
+            return ts;
         case "package-decl":
             var ts = "package " + node.name + " {" + wsn + generate(node.body, opt, nxt, wsn) + wsn + "};" + wsn;
 
@@ -218,7 +284,7 @@ function generate(node, opt, ctx, join) {
         case "array-set":
             return generate(node.expr, opt, nxt) + "._set_array(" + generate(node.array, opt, nxt) + ", " + generate(node.rhs, opt, nxt) + ")";
         case "variable":
-            if (node.global == "$") {
+            if (node.global) {
                 return "$" + node.name;
             }
 

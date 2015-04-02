@@ -11,6 +11,10 @@
 		{
 			"name": "das Clockler",
 			"email": "hello@clockler.com"
+		},
+		{
+			"name": "Brian Smith",
+			"email": "bsmith@wmail.io"
 		}
 	],
 	"bin": {
@@ -26,7 +30,8 @@
 		"url": "https://github.com/portify/lever/issues"
 	},
 	"dependencies": {
-		"minimist": "1.x"
+		"minimist": "1.x",
+		"mkdirp": "*"
 	},
 	"devDependencies": {
 		"jison": "*"
