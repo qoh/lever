@@ -92,8 +92,6 @@ commands.new = function(args, opts) {
 	}
 
 	console.log("Successfully created " + addon);
-
-	generateHashes();
 };
 commands.init = commands.new;
 
@@ -155,6 +153,19 @@ commands.compile = function(args, opts) {
 	}
 };
 
+commands.help = function (args, opts) {
+	console.log("Usage: lever <command> [-c|--compact] [-o|--out] [-a|--author] [-d|--description] [<args>]");
+	console.log("Commands:\n");
+	console.log("\tcompile\t\t Compile a given set of files.");
+	console.log("\tcompileall\t Compile all of the files in the working directory");
+	console.log("\tinit|new\t Create a skeleton for a new add-on.");
+	console.log("\tbuild|package\t Package the current project into an Add-On (unimplemented)");
+};
+
+commands.shorthelp = function (args, opts) {
+	console.log("Usage: lever [command] [options]");
+	console.log("Use lever help to find out more commands.");
+};
 
 var cmd = process.argv[2],
 	i = 2 + Number(commands.hasOwnProperty(cmd)),
@@ -179,6 +190,6 @@ var cmd = process.argv[2],
 silent = argv.silent;
 
 if(!commands.hasOwnProperty(cmd))
-	commands.compile(argv._, argv);
+	commands.shorthelp(argv._, argv);
 else
 	commands[cmd](argv._, argv);
