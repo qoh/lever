@@ -16,6 +16,9 @@ function iter_new(%next, %drop) {
 }
 
 function iter_drop(%id) {
+    // call() does not error on unexistant functions, checks in-engine
+	// checking for "" would be slower when there's a drop func and not much faster when there isn't
+    // usually there is one anyway
     call($_iter_drop[%id], %id);
     $_iter_next[%id] = "";
     $_iter_drop[%id] = "";
@@ -23,6 +26,9 @@ function iter_drop(%id) {
 }
 
 function iter_next(%id) {
+    // see notes in iter_drop() for call()
+	// there's normally always a next func and when there isn't,
+	// you'll always get a falsy value, so it's fine to not check %id
     return call($_iter_next[%id], %id);
 }
 
@@ -247,6 +253,22 @@ function IteratorProto::each(%id, %func) {
     iter_drop(%id);
 }
 
+function IteratorProto::sample(%id, %count) {
+	if (%count == 1) {
+		%visited = 0;
+
+		while (iter_next(%id)) {
+			if (getRandom(%visited) == 0) {
+				%value = $iter_value[%id];
+            }
+
+			%visited++;
+		}
+
+		return %value;
+	}
+}
+
 // IteratorProto::reverse
 
 // ======
@@ -273,4 +295,25 @@ function range(%min, %max, %step) {
     $iter_curr[%id] = %min;
     $iter_step[%id] = %step $= "" ? 1 : %step;
     return %id;
+}
+
+// ======
+// Common convenience iterator type
+function array_iter_next(%id) {
+    if ($iter_index[%id] < $iter_length[%id]) {
+        $iter_value[%id] = $iter_values[%id, $iter_index[%id]];
+        $iter_index[%id]++;
+        return 1;
+    }
+
+    return 0;
+}
+
+function array_iter_drop(%id) {
+    for (%i = 0; %i < $iter_length[%id]; %i++) {
+        $iter_values[%id, %i] = "";
+    }
+
+    $iter_length[%id] = "";
+    $iter_index[%id] = "";
 }

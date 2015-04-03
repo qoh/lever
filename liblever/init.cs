@@ -1,6 +1,11 @@
-exec("./lib/exec.cs");
-exec("./lib/misc.cs");
-exec("./lib/iter.cs");
-exec("./lib/extend.cs");
-exec("./lib/vec.cs");
-exec("./lib/hashmap.cs");
+exec("./types/Vec.cs");
+exec("./types/HashMap.cs");
+exec("./types/TypeMarker.cs");
+
+exec("./general/exec.cs");
+exec("./general/misc.cs");
+exec("./general/iter.cs");
+exec("./general/extend.cs");
+
+// exec("./lib/json.cs");
+// exec("./lib/profiler.cs");

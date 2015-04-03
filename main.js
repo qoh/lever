@@ -424,20 +424,20 @@ function generate(node, opt, ctx, join) {
             var values = "";
 
             for (var i = 0; i < node.values.length; i++) {
-                values += ".____newitem(" + generate(node.values[i], opt, nxt) + ")";
+                values += "._add_item(" + generate(node.values[i], opt, nxt) + ")";
             }
 
-            return "____newvec()" + values;
+            return "Vec()" + values;
         case "create-map":
             //console.log(JSON.stringify(node, null, 4));
             var values = "";
 
             for (var i = 0; i < node.pairs.length; i++) {
-                values += ".____newpair(" + generate(node.pairs[i][0], opt, nxt) +
+                values += "._add_pair(" + generate(node.pairs[i][0], opt, nxt) +
                     ", " + generate(node.pairs[i][1], opt, nxt) + ")";
             }
 
-            return "____newhashmap()" + values;
+            return "HashMap()" + values;
     }
 
     return "<< " + node.type + " " + JSON.stringify(node, " ") + " >>";

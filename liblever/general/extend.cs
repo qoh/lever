@@ -6,7 +6,32 @@ function SimObject::clone(%this) {
     return %clone;
 }
 
-function SimObject::getField(%this, %name) {
+function SimObject::isMethod(%this, %name) {
+	%className = %this.getClassName();
+
+	if (%className $= "ScriptObject" || %className $= "ScriptGroup") {
+		if (%this.class !$= "" && isFunction(%this.class, %name)) {
+			return 1;
+        }
+
+		if (%this.superClass !$= "" && isFunction(%this.superClass, %name)) {
+			return 1;
+        }
+	}
+
+    // This could be improved a lot (with proper class hierarchy tests)
+	return isFunction(%className, %name) || isFunction("SimObject", %name);
+}
+
+function SimObject::call(%this, %name,
+	%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r)
+{
+	return eval("return %this." @ %name @
+		"(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r);");
+}
+
+
+function SimObject::_get_array(%this, %name) {
     switch (stripos("_abcdefghijklmnopqrstuvwxyz", getSubStr(%name, 0, 1))) {
         case  0: return %this._[getSubStr(%name, 1, strlen(%name))];
         case  1: return %this.a[getSubStr(%name, 1, strlen(%name))];
@@ -40,7 +65,7 @@ function SimObject::getField(%this, %name) {
     return "";
 }
 
-function SimObject::setField(%this, %name, %value) {
+function SimObject::_set_array(%this, %name, %value) {
     switch (stripos("_abcdefghijklmnopqrstuvwxyz", getSubStr(%name, 0, 1))) {
         case  0: %this._[getSubStr(%name, 1, strlen(%name))] = %value;
         case  1: %this.a[getSubStr(%name, 1, strlen(%name))] = %value;

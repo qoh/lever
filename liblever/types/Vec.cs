@@ -1,17 +1,15 @@
-// For converted constructors
-// ============
-function ____newvec() {
+function Vec() {
     return new ScriptObject() {
         class = "Vec";
         length = 0;
     };
 }
-function Vec::____newitem(%this, %value) {
+
+function Vec::_add_item(%this, %value) {
     %this.value[%this.length] = %value;
     %this.length++;
-    return %this; // important
+    return %this;
 }
-// ============
 
 function Vec::_get_array(%this, %index) {
     return %this.value[%index];
