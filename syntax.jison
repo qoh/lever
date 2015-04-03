@@ -48,7 +48,7 @@ decl
     ;
 
 fn_decl
-    : 'fn' var_local '(' ident_list ')' block
+    : 'fn' var_local '(' fn_arg_list ')' block
         { $$ = {type: "fn-stmt", name: $2, args: $4, body: $6}; }
     | 'fn' var_local '(' ')' block
         { $$ = {type: "fn-stmt", name: $2, args: [], body: $5}; }
@@ -56,7 +56,7 @@ fn_decl
         { $$ = {type: "fn-stmt", name: $3, args: $5, body: $7, scoped: true}; }
     | 'fn' var_local block
         { $$ = {type: "fn-stmt", name: $2, args: [], body: $3}; }
-    | 'fn' var_local '::' var_local '(' ident_list ')' block
+    | 'fn' var_local '::' var_local '(' fn_arg_list ')' block
         { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $6, body: $8}; }
     | 'fn' var_local '::' var_local '(' ')' block
         { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: [], body: $7}; }
@@ -64,9 +64,9 @@ fn_decl
         { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: [], body: $5}; }
 
     // extreme sugar activate
-    | 'fn' '/' var_local '(' ident_list ')' block
+    | 'fn' '/' var_local '(' fn_arg_list ')' block
         {
-            $5.unshift("client");
+            $5.unshift({name: "client"});
             $$ = {type: "fn-stmt", name: "serverCmd" + $3, args: $5, body: $7}; }
         }
     | 'fn' '/' var_local '(' ')' block
@@ -232,6 +232,24 @@ ident_list
         { $$ = [$1]; }
     | ident_list ',' var_local
         { $$ = $1; $1.push($3); }
+    ;
+
+fn_arg_list
+    : fn_arg
+        { $$ = [$1]; }
+    | fn_arg_list ',' fn_arg
+        { $$ = $1; $1.push($3); }
+    ;
+
+fn_arg
+    : var_local
+        { $$ = {name: $1}; }
+    | var_local '=' expr
+        { $$ = {name: $1, auto: $3}; }
+    | var_local var_local
+        { $$ = {type: $1, name: $2}; }
+    | var_local var_local '=' expr
+        { $$ = {type: $1, name: $2, auto: $4}; }
     ;
 
 // expr_list

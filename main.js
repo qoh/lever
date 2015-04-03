@@ -197,12 +197,40 @@ function generate(node, opt, ctx, join) {
 
             var str = "";
 
-            for (var i = 0; i < args.length; i++) {
-                str += (i > 0 ? ", " : "") + "%" + args[i];
-            }
-
             var addl = "";
             var addr = "";
+
+            for (var i = 0; i < args.length; i++) {
+                str += (i > 0 ? ", " : "") + "%" + args[i].name;
+
+                var test;
+                var arg = "%" + args[i].name;
+
+                switch (args[i].type) {
+                    case "int": test = arg + " !$= (" + arg + " | 0)";
+                    case "float": test = arg + " !$= (" + arg + " + 0)";
+                    case "object": test = "!isObject(" + arg + ")";
+                }
+
+                if (args[i].auto !== undefined) {
+                    addl +=
+                        "if (" + arg + " $= \"\") {" + wsn +
+                        wst + arg + " = " + generate(args[i].auto, opt, nxt) + ";" + wsn +
+                        "}";
+
+                    if (test === undefined) {
+                        addl += wsn;
+                    }
+                }
+
+                if (test !== undefined) {
+                    addl += (args[i].auto !== undefined ? " else " : "") +
+                        "if (" + test + ") {" + wsn +
+                        wst + "error(\"ERROR: Argument '" + args[i].name + "' must be " + args[i].type + "\");" + wsn +
+                        wst + "return \"\";" + wsn +
+                        "}" + wsn;
+                }
+            }
 
             if (opt.profile) {
                 addl += "PROFILER_ENTER(\"" + name + "\");" + wsn;
@@ -292,9 +320,31 @@ function generate(node, opt, ctx, join) {
                     continue;
                 }
 
+                var args = "";
+
+                for (var i = 0; i < fn.args.length; i++) {
+                    if (i > 0) {
+                        args += ", ";
+                    }
+
+                    if (fn.args[i].auto !== undefined) {
+                        args += "[";
+                    }
+
+                    if (fn.args[i].type !== undefined) {
+                        args += fn.args[i].type + " ";
+                    }
+
+                    args += fn.args[i].name;
+
+                    if (fn.args[i].auto !== undefined) {
+                        args += "[";
+                    }
+                }
+
                 code += "if (!" + node.name + ".isMethod" + fn.name + ") {" + wsn +
                     wst + node.name + ".isMethod" + fn.name + " = 1;" + wsn +
-                    wst + node.name + ".methodArgs" + fn.name + " = \"" + fn.args.join(", ") + "\";" + wsn +
+                    wst + node.name + ".methodArgs" + fn.name + " = \"" + args + "\";" + wsn +
                     wst + node.name + ".methodName[" + node.name + ".methodCount] = \"" + fn.name + "\";" + wsn +
                     wst + node.name + ".methodCount++;" + wsn +
                     "}" + wsn;
