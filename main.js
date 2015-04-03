@@ -220,30 +220,105 @@ function generate(node, opt, ctx, join) {
 
             return "function " + name + "(" + str + ")" +
                 " {" + wsn + addl + generate(node.body, opt, nxt, wsn) + addr + wsn + "}" + wsn;
+
         case "class-decl":
+            if (find_root(ctx, "package-decl")) {
+                return generate(node.body, opt, nxt, wsn);
+            }
+
+            var fields = "";
+
+            for (var i = 0; i < node.body.length; i++) {
+                if (node.body[i].type == "assign") {
+                    fields += wst + wst + node.body[i].var + " = " + generate(node.body[i].rhs, opt, nxt) + ";" + wsn;
+                }
+            }
+
             if (node.static) {
                 var c_delete  = "function " + node.name + "::delete() { error(\"ERROR: Cannot delete static classes\"); }";
                 var c_setname = "function " + node.name + "::setName() { error(\"ERROR: Cannot rename static classes\"); }";
                 var c_create  = "if (!isObject(" + node.name + ")) {" + wsn + wst + "new ScriptObject(\"" + node.name + "\"); }";
 
-                return generate(node.body, opt, nxt, wsn) + wsn + wsn + c_delete + wsn + wsn + c_setname + wsn + wsn + c_create;
+                var code = "";
+
+                for (var i = 0; i < node.body.length; i++) {
+                    var fn = node.body[i];
+
+                    if (fn.type == "fn-stmt") {
+                        code += generate(fn, opt, nxt) + wsn;
+                    }
+                }
+
+                code +=
+                    "function " + node.name + "::delete() { error(\"ERROR: Cannot delete static classes\"); }" + wsn +
+                    "function " + node.name + "::setName() { error(\"ERROR: Cannot rename static classes\"); }" + wsn + wsn +
+                    "if (!isObject(" + node.name + ")) {" + wsn +
+                    wst + "new ScriptObject(\"" + node.name + "\") {" + wsn +
+                    fields +
+                    wst + "};" + wsn +
+                    "}";
+
+                //return generate(node.body, opt, nxt, wsn) + wsn + wsn + c_delete + wsn + wsn + c_setname + wsn + wsn + c_create;
+                return code;
             }
 
-            if (!find_root(ctx, "package-decl")) {
-                var ctor = "function " + node.name + "(" +
-                    "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {" + wsn +
-                    "%z = new ScriptObject() {" + wsn + "class = \"" + node.name + "\";" + wsn +
-                    "superClass = \"Class\";" + wsn + "____inst=1;" + wsn + "};" + wsn +
-                    "if(isFunction(\"" + node.name + "\", \"onNew\"))" + wsn + "%z.onNew(" +
-                    "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" + wsn +
-                    "return %z;" + wsn + "}" + wsn + wsn;
-                return wsn + "if(!isObject(" + node.name + "))" + wsn + "new ScriptObject(" +
-                    node.name + ") {" + wsn + "class = \"Class\";" + wsn + "____inst = 0;" + wsn +
-                    "};" + wsn + wsn + ctor + generate(node.body, opt, nxt, wsn);
+            var code =
+                "if (!isObject(" + node.name + ")) {" + wsn +
+                wst + "new ScriptObject(" + node.name + ") {" + wsn +
+                wst + wst + "class = \"Class\";" + wsn +
+                wst + wst + "____inst = 0;" + wsn +
+                wst + wst + "parent = \"" + (node.parent === undefined ? "" : node.parent) + "\";" + wsn +
+                wst + wst + "methodCount = 0;" + wsn +
+                fields +
+                wst + "};" + wsn +
+                "}" + wsn +
+                "function " + node.name + "(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {" + wsn +
+                wst + "%_ = new ScriptObject() {" + wsn +
+                wst + wst + "class = \"" + node.name + "\";" + wsn +
+                wst + wst + "superClass = \"Class\";" + wsn +
+                wst + wst + "____inst = 1;" + wsn +
+                wst + "};" + wsn +
+                wst + "if(isFunction(\"" + node.name + "\", \"onNew\")) {" + wsn +
+                wst + wst + "%_.onNew(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" + wsn +
+                wst + "}" + wsn +
+                wst + "return %_;" + wsn +
+                "}" + wsn + wsn;
+
+            for (var i = 0; i < node.body.length; i++) {
+                var fn = node.body[i];
+
+                if (fn.type !== "fn-stmt") {
+                    continue;
+                }
+
+                code += "if (!" + node.name + ".isMethod" + fn.name + ") {" + wsn +
+                    wst + node.name + ".isMethod" + fn.name + " = 1;" + wsn +
+                    wst + node.name + ".methodArgs" + fn.name + " = \"" + fn.args.join(", ") + "\";" + wsn +
+                    wst + node.name + ".methodName[" + node.name + ".methodCount] = \"" + fn.name + "\";" + wsn +
+                    wst + node.name + ".methodCount++;" + wsn +
+                    "}" + wsn;
+
+                code += generate(fn, opt, nxt) + wsn;
             }
-            else {
-                return generate(node.body, opt, nxt, wsn);
+
+            if (node.parent !== undefined) {
+                var name = node.name;
+                var parent = node.parent;
+
+                code +=
+                    "for ($i = 0; $i < " + parent + ".methodCount; $i++) {" + wsn +
+                    wst + "if (!" + name + ".isMethod[$m = " + parent + ".methodName[$i]]) {" + wsn +
+                    wst + wst + "eval(\"function " + name + "::\" @ $m @ \"(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s,%t){return " + parent + "::\" @ $m @ \"(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s,%t);}\");" + wsn +
+                    wst + wst + name + ".isMethod[$m] = 1;" + wsn +
+                    wst + wst + name + ".isInherited[$m] = 1;" + wsn +
+                    wst + wst + name + ".methodArgs[$m] = " + parent + ".methodArgs[$m];" + wsn +
+                    wst + wst + name + ".methodName[" + name + ".methodCount] = $m;" + wsn +
+                    wst + wst + name + ".methodCount++;" + wsn +
+                    wst + "}" + wsn +
+                    "}" + wsn + wsn;
             }
+
+            return code;
 
         case "return-stmt":
             var root = find_root(ctx, "foreach-stmt");
@@ -354,6 +429,11 @@ function generate(node, opt, ctx, join) {
                         node.args.unshift({"type": "variable", "global": false, "name": "client"});
                       }
                       return "Parent::" + root_fn.node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
+                    }
+                    var root_class = find_root(ctx, "class-decl");
+                    if(root_class && root_fn && root_class.node.parent !== undefined)
+                    {
+                      return root_class.node.parent + "::" + root_fn.node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
                     }
                   }
                   return node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";

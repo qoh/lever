@@ -82,6 +82,17 @@ fn_decl_list
         { $$ = $1; $1.push($2); }
     ;
 
+fn_assign_decl_list
+    : fn_decl
+        { $$ = [$1]; }
+    | var_local '=' expr ';'
+        { $$ = [{type: "assign", var: $1, rhs: $3}]; }
+    | fn_assign_decl_list fn_decl
+        { $$ = $1; $1.push($2); }
+    | fn_assign_decl_list var_local '=' expr ';'
+        { $$ = $1; $1.push({type: "assign", var: $2, rhs: $4}); }
+    ;
+
 fn_class_decl_list
     : fn_decl
         { $$ = [$1]; }
@@ -94,10 +105,12 @@ fn_class_decl_list
     ;
 
 class_decl
-    : 'static_class' var_local block_fn_only
+    : 'static_class' var_local block_fn_assign_only
         { $$ = {type: "class-decl", name: $2, body: $3, static: true}; }
-    | 'class' var_local block_fn_only
+    | 'class' var_local block_fn_assign_only
         { $$ = {type: "class-decl", name: $2, body: $3}; }
+    | 'class' var_local ':' var_local block_fn_assign_only
+        { $$ = {type: "class-decl", name: $2, parent: $4, body: $5}; }
     ;
 
 match_decl
@@ -152,6 +165,13 @@ block_fn_only
     : '{' '}'
         { $$ = []; }
     | '{' fn_decl_list '}'
+        { $$ = $2; }
+    ;
+
+block_fn_assign_only
+    : '{' '}'
+        { $$ = []; }
+    | '{' fn_assign_decl_list '}'
         { $$ = $2; }
     ;
 
