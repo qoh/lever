@@ -41,9 +41,9 @@ decl
         { $$ = $1; }
     | match_decl
         { $$ = $1; }
-    | 'package' var_local block_fn_only
+    | 'package' var_local block_fn_class_only
         { $$ = {type: "package-decl", name: $2, body: $3, active: false}; }
-    | 'active' 'package' var_local block_fn_only
+    | 'active' 'package' var_local block_fn_class_only
         { $$ = {type: "package-decl", name: $3, body: $4, active: true}; }
     ;
 
@@ -79,6 +79,17 @@ fn_decl_list
     : fn_decl
         { $$ = [$1]; }
     | fn_decl_list fn_decl
+        { $$ = $1; $1.push($2); }
+    ;
+
+fn_class_decl_list
+    : fn_decl
+        { $$ = [$1]; }
+    | class_decl
+        { $$ = [$1]; }
+    | fn_class_decl_list fn_decl
+        { $$ = $1; $1.push($2); }
+    | fn_class_decl_list class_decl
         { $$ = $1; $1.push($2); }
     ;
 
@@ -141,6 +152,15 @@ block_fn_only
     | '{' fn_decl_list '}'
         { $$ = $2; }
     ;
+
+block_fn_class_only
+    : '{' '}'
+        { $$ = []; }
+    | '{' fn_class_decl_list '}'
+        { $$ = $2; }
+    ;
+
+
 
 stmt_list
     : stmt
