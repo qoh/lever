@@ -68,10 +68,10 @@ function generate(node, opt, ctx, join) {
             var file = node.file;
 
             if (file.type == "constant") {
-                file = file.value;
+                file = "\"@ \"" + file.value + "\" @ \"";
             }
             else {
-                file = generate(file, opt, nxt);
+                file = "\" @ " + generate(file, opt, nxt) + " @ \"";
             }
 
             file += ".ls.cs";
