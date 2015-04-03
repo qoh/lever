@@ -64,6 +64,44 @@ function generate(node, opt, ctx, join) {
     }
 
     switch (node.type) {
+        case "match-decl":
+            var variate = node.variate;
+            var string = false;
+            var body = node.body;
+            var ts = "";
+
+            if (variate.type == "constant") {
+                if (variate.what != "integer" && variate.what != "float") {
+                    string = true;
+                    variate = "\"" + variate.value + "\"";
+                }
+                else {
+                    variate = variate.value;
+                }
+            }
+            else {
+                string = true;
+                variate = generate(variate, opt, nxt);
+            }
+
+            for (var i = 0; i < body.length; i++) {
+                var parts = body[i];
+
+                for (var j = 0; j < parts.length; j++) {
+                    var key = parts[j].key;
+                    var value = parts[j].value;
+
+                    if (key.what == "string")
+                        key = "\"" + key.value + "\"";
+                    else
+                        key = key.value;
+
+                    ts += "case " + key + ":" + wsn;
+                    ts += generate(value, opt, nxt) + wsn;
+                }
+            }
+
+            return "switch" + (string ? "$" : "") + "(" + variate + ") {" + wsn + ts + "}" + wsn;
         case "use-stmt":
             var file = node.file;
 
