@@ -10,6 +10,15 @@ class Acc {
     }
 }
 
+active package Idk {
+    class Acc {
+        fn getLevel {
+            echo("hi!");
+            return parent::getLevel();
+        }
+    }
+}
+
 fn test {
     players = [
         Acc("Foo", 17,  390),
@@ -22,3 +31,5 @@ fn test {
         player.delete();
     }
 }
+
+$AAAAAAY::::::::::::::LMAO = 1;
