@@ -277,6 +277,7 @@ function generate(node, opt, ctx, join) {
                 wst + wst + "class = \"" + node.name + "\";" + wsn +
                 wst + wst + "superClass = \"Class\";" + wsn +
                 wst + wst + "____inst = 1;" + wsn +
+                fields +
                 wst + "};" + wsn +
                 wst + "if(isFunction(\"" + node.name + "\", \"onNew\")) {" + wsn +
                 wst + wst + "%_.onNew(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" + wsn +
