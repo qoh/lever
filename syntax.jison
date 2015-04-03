@@ -83,7 +83,9 @@ fn_decl_list
     ;
 
 class_decl
-    : 'class' var_local block_fn_only
+    : 'static_class' var_local block_fn_only
+        { $$ = {type: "class-decl", name: $2, body: $3, static: true}; }
+    | 'class' var_local block_fn_only
         { $$ = {type: "class-decl", name: $2, body: $3}; }
     ;
 

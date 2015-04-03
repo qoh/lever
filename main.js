@@ -221,6 +221,14 @@ function generate(node, opt, ctx, join) {
             return "function " + name + "(" + str + ")" +
                 " {" + wsn + addl + generate(node.body, opt, nxt, wsn) + addr + wsn + "}" + wsn;
         case "class-decl":
+            if (node.static) {
+                var c_delete  = "function " + node.name + "::delete() { error(\"ERROR: Cannot delete static classes\"); }";
+                var c_setname = "function " + node.name + "::setName() { error(\"ERROR: Cannot rename static classes\"); }";
+                var c_create  = "if (!isObject(" + node.name + ")) {" + wsn + wst + "new ScriptObject(\"" + node.name + "\"); }";
+
+                return generate(node.body, opt, nxt, wsn) + wsn + wsn + c_delete + wsn + wsn + c_setname + wsn + wsn + c_create;
+            }
+            
             var ctor = "function " + node.name + "(" +
                 "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {" + wsn +
                 "%z = new ScriptObject() {" + wsn + "class = \"" + node.name + "\";" + wsn +

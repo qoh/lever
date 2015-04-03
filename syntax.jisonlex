@@ -55,6 +55,7 @@ namespaceident              [a-zA-Z_][a-zA-Z_0-9:]*
 "scoped"                    return 'scoped';
 "fn"                        return 'fn';
 "new"                       return 'new';
+"static class"              return 'static_class'; // cheating.
 "class"                     return 'class';
 "return"                    return 'return';
 "break"                     return 'break';

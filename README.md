@@ -26,6 +26,7 @@ Commands:
 
 * `compile`: Compile a given set of files. If no valid command is supplied, defaults to this.
   * `-c, --compact`: Omit all unnecessary whitespace.
+  * `-p, --profile`: Inject `PROFILER_ENTER` and `PROFILER_LEAVE` calls into functions.
   * `-o, --out`: Write all output to the given file instead of individual files.
 * `init | new`: Create a skeleton for a new add-on. (unimplemented)
   * `-t, --title`: Pre-supply a title for the add-on. Defaults to the current working directory's name.
@@ -66,13 +67,13 @@ Lever also supports anonymous functions:
 ### Packages
 
     package MyPackage {
-    
+
     };
 
 Prepending `active` will activate the package by default:
 
     active package MyPackage {
-    
+
     };
 
 Parenting is done by simply calling `Parent` regardless of the function:
