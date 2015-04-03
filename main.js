@@ -216,16 +216,21 @@ function generate(node, opt, ctx, join) {
             return "function " + name + "(" + str + ")" +
                 " {" + wsn + addl + generate(node.body, opt, nxt, wsn) + addr + wsn + "}" + wsn;
         case "class-decl":
-            var ctor = "function " + node.name + "(" +
-                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {" + wsn +
-                "%z = new ScriptObject() {" + wsn + "class = \"" + node.name + "\";" + wsn +
-                "superClass = \"Class\";" + wsn + "____inst=1;" + wsn + "};" + wsn +
-                "if(isFunction(\"" + node.name + "\", \"onNew\"))" + wsn + "%z.onNew(" +
-                "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" + wsn +
-                "return %z;" + wsn + "}" + wsn + wsn;
-            return wsn + "if(!isObject(" + node.name + "))" + wsn + "new ScriptObject(" +
-                node.name + ") {" + wsn + "class = \"Class\";" + wsn + "____inst = 0;" + wsn +
-                "};" + wsn + wsn + ctor + generate(node.body, opt, nxt, wsn);
+            if (!find_root(ctx, "package-decl")) {
+                var ctor = "function " + node.name + "(" +
+                    "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {" + wsn +
+                    "%z = new ScriptObject() {" + wsn + "class = \"" + node.name + "\";" + wsn +
+                    "superClass = \"Class\";" + wsn + "____inst=1;" + wsn + "};" + wsn +
+                    "if(isFunction(\"" + node.name + "\", \"onNew\"))" + wsn + "%z.onNew(" +
+                    "%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" + wsn +
+                    "return %z;" + wsn + "}" + wsn + wsn;
+                return wsn + "if(!isObject(" + node.name + "))" + wsn + "new ScriptObject(" +
+                    node.name + ") {" + wsn + "class = \"Class\";" + wsn + "____inst = 0;" + wsn +
+                    "};" + wsn + wsn + ctor + generate(node.body, opt, nxt, wsn);
+            }
+            else {
+                return generate(node.body, opt, nxt, wsn);
+            }
         case "return-stmt":
             var root = find_root(ctx, "foreach-stmt");
             var clean;
