@@ -71,7 +71,7 @@ function generate(node, opt, ctx, join) {
             var ts = "";
 
             if (variate.type == "constant") {
-                if (variate.what != "integer" && variate.what != "float") {
+                if (variate.what == "string") {
                     string = true;
                     variate = "\"" + variate.value + "\"";
                 }
@@ -80,7 +80,6 @@ function generate(node, opt, ctx, join) {
                 }
             }
             else {
-                string = true;
                 variate = generate(variate, opt, nxt);
             }
 
@@ -91,8 +90,10 @@ function generate(node, opt, ctx, join) {
                     var key = parts[j].key;
                     var value = parts[j].value;
 
-                    if (key.what == "string")
+                    if (key.what == "string") {
                         key = "\"" + key.value + "\"";
+                        string = true;
+                    }
                     else
                         key = key.value;
 
