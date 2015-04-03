@@ -119,7 +119,8 @@ commands.compileall = function(args, opts) {
 
 commands.compile = function(args, opts) {
 	var lever_opts = {
-		"compact": opts.compact
+		"compact": opts.compact,
+		"profile": opts.profile
 	};
 
 	for (var i = 0; i < args.length; i++) {
@@ -154,7 +155,7 @@ commands.compile = function(args, opts) {
 };
 
 commands.help = function (args, opts) {
-	console.log("Usage: lever <command> [-c|--compact] [-o|--out] [-a|--author] [-d|--description] [<args>]");
+	console.log("Usage: lever <command> [-c|--compact] [-p|--profile] [-o|--out] [-a|--author] [-d|--description] [<args>]");
 	console.log("Commands:\n");
 	console.log("\tcompile\t\t Compile a given set of files.");
 	console.log("\tcompileall\t Compile all of the files in the working directory");
@@ -174,9 +175,10 @@ var cmd = process.argv[2],
 		process.argv.slice(i),
 		{
 			"string": ["out", "author", "description"],
-			"boolean": ["compact", "silent", "git", "client", "server", "namecheck"],
+			"boolean": ["compact", "profile", "silent", "git", "client", "server", "namecheck"],
 			"alias": {
 				"c": "compact",
+				"p": "profile",
 				"s": "silent",
 				"o": "out",
 				"g": "git",

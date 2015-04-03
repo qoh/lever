@@ -204,6 +204,11 @@ function generate(node, opt, ctx, join) {
             var addl = "";
             var addr = "";
 
+            if (opt.profile) {
+                addl += "PROFILER_ENTER(\"" + name + "\");" + wsn;
+                addr += wsn + "PROFILER_LEAVE();";
+            }
+
             if (node.scoped) {
                 addl += "%____scope=LeverScope(%____scope);";
                 addr += "%____scope.drop();";
@@ -241,6 +246,14 @@ function generate(node, opt, ctx, join) {
                 clean = "";
             }
 
+            if (opt.profile) {
+                if (node.expr !== null) {
+                    return clean + "%_=" + generate(node.expr, opt, nxt) + ";PROFILER_LEAVE();return%_;";
+                } else {
+                    return clean + "PROFILER_LEAVE();return;";
+                }
+            }
+
             if (node.expr !== null) {
                 return clean + "return " + generate(node.expr, opt, nxt) + ";";
             } else {
@@ -259,6 +272,16 @@ function generate(node, opt, ctx, join) {
                     " {" + wsn + generate(node.body, opt, nxt) + wsn + "}";
             }
         case "foreach-stmt":
+            if (node.iter.type == "range") {
+                // Optimize the `for i in 0..9` case
+                var bind = generate(node.bind, opt, nxt);
+
+                return "for (" +
+                    bind + " = " + generate(node.iter.min, opt, nxt) + "; " +
+                    bind + (node.iter.inclusive ? " <= " : " < ") + generate(node.iter.max, opt, nxt) + "; " +
+                    bind + "++) {" + wsn + generate(node.body, opt, nxt, wsn) + wsn + "}";
+            }
+
             var root = find_root(ctx, "foreach-stmt");
             var ref;
 
@@ -271,9 +294,15 @@ function generate(node, opt, ctx, join) {
             nxt.ref = ref;
 
             return ref + "=" + generate(node.iter, opt, nxt) + ";" + wsn +
-                "while(iter_next(" + ref +")) {" + wsn + generate(node.bind, opt, nxt) +
+                "while (iter_next(" + ref +")) {" + wsn + generate(node.bind, opt, nxt) +
                 " = $iter_value[" + ref + "];" + wsn + generate(node.body, opt, nxt, wsn) +
                 wsn + "}" + wsn + "iter_drop(" + ref + ");" + wsn;
+        case "for-stmt":
+            return "for (" +
+                generate(node.init, opt, nxt) + "; " +
+                generate(node.test, opt, nxt) + "; " +
+                generate(node.step, opt, nxt) + ") {" + wsn +
+                generate(node.body, opt, nxt, wsn) + wsn + "}";
         case "while-stmt":
             return "while(" + generate(node.cond, opt, nxt) + ") {" + wsn +
                 generate(node.body, opt, nxt, wsn) + wsn + "}" + wsn;
@@ -283,6 +312,15 @@ function generate(node, opt, ctx, join) {
             return generate(node.expr, opt, nxt) + ";";
         case "expr-expr":
             return "(" + generate(node.expr, opt, nxt) + ")";
+        case "range":
+            var min = generate(node.min, opt, nxt);
+            var max = generate(node.max, opt, nxt);
+
+            if (node.inclusive) {
+                max = max + "+1";
+            }
+
+            return "range(" + min + "," + max + ")";
         case "call":
             if (node.target !== undefined) {
                 return generate(node.target, opt, nxt) + "." + node.name +
@@ -319,6 +357,8 @@ function generate(node, opt, ctx, join) {
             return "macro_call()";
         case "assign":
             return generate(node.var, opt, nxt) + " = " + generate(node.rhs, opt, nxt);
+        case "unary-assign":
+            return generate(node.var, opt, nxt) + node.op;
         case "field-get":
             return generate(node.expr, opt, nxt) + "." + node.name;
         case "array-get":
@@ -412,7 +452,7 @@ function convert(source, opts) {
     var ast = parser.parse(source);
     //console.log(JSON.stringify(ast, null, 4));
 
-    var opt = {"compact": false};
+    var opt = {"compact": false, "profile": false};
     for(var k in opts)
     {
         if(opts.hasOwnProperty(k) && opt.hasOwnProperty(k))

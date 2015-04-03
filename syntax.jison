@@ -184,6 +184,8 @@ stmt
         { $$ = {type: "continue-stmt"}; }
     | if_stmt
         { $$ = $1; }
+    | 'for' expr ';' expr ';' expr block
+        { $$ = {type: "for-stmt", init: $2, test: $4, step: $6, body: $7}; }
     | 'for' var 'in' expr block
         { $$ = {type: "foreach-stmt", "bind": $2, "iter": $4, body: $5}; }
     | 'for' '(' var 'in' ')' expr block
@@ -281,15 +283,32 @@ expr
     | expr 'NL' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '..' expr
-        {
+        /* {
             $$ = {
                 type: "call",
                 name: "range",
-                args: [$1, $3]
+                args: [$1, $3],
+                inclusive: false
+            };
+        } */
+        {
+            $$ = {
+                type: "range",
+                min: $1,
+                max: $3,
+                inclusive: false
             };
         }
     | expr '...' expr
         {
+            $$ = {
+                type: "range",
+                min: $1,
+                max: $3,
+                inclusive: true
+            };
+        }
+        /* {
             $$ = {
                 type: "call",
                 name: "range",
@@ -307,7 +326,7 @@ expr
                     }
                 ]
             };
-        }
+        } */
     | '-' expr  %prec UNARY
         { $$ = {type: "unary", op: $1, expr: $2}; }
     | '!' expr  %prec UNARY
@@ -372,6 +391,10 @@ map_pair
 stmt_expr
     : var '=' expr
         { $$ = {type: "assign", "var": $1, rhs: $3}; }
+    | var '++'
+        { $$ = {type: "unary-assign", "var": $1, op: $2}; }
+    | var '--'
+        { $$ = {type: "unary-assign", "var": $1, op: $2}; }
     | expr '.' var_local '=' expr
         { $$ = {type: "field-set", expr: $1, name: $3, rhs: $5}; }
     | expr '[' expr ']' '=' expr
