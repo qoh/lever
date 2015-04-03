@@ -34,10 +34,8 @@ function dive(dir, action) {
     });
 };
 
-function log()
-{
-	if(!silent)
-	{
+function log() {
+	if(!silent) {
 		console.log.apply(console, arguments);
 	}
 }
@@ -68,11 +66,17 @@ commands.new = function(args, opts) {
 	}
 
 	if ( opts.client && !opts.server ) {
+		fs.writeFile(addon + "/client.cs", "exec(\"client.ls.cs\")", function (err) {
+			if (err) throw err;
+		});
 		fs.writeFile(addon + "/client.ls", "// Your Code Here", function (err) {
 			if (err) throw err;
 		});
 	}
 	else {
+		fs.writeFile(addon + "/server.cs", "exec(\"server.ls.cs\")", function (err) {
+			if (err) throw err;
+		});
 		fs.writeFile(addon + "/server.ls", "// Your Code Here", function (err) {
 			if (err) throw err;
 		});
