@@ -204,12 +204,21 @@ function generate(node, opt, ctx, join) {
                 str += (i > 0 ? ", " : "") + "%" + args[i].name;
 
                 var test;
+                var fail = "must be " + args[i].type;
+
                 var arg = "%" + args[i].name;
 
                 switch (args[i].type) {
+                    case "required": test = arg + " $= \"\""; fail = " is required";
                     case "int": test = arg + " !$= (" + arg + " | 0)";
                     case "float": test = arg + " !$= (" + arg + " + 0)";
                     case "object": test = "!isObject(" + arg + ")";
+                    case "bool": test = arg + " !$= true && " + arg + " !$= false";
+
+                    default:
+                        console.log("Warning: Argument '" + args[i].name + "' for function '" + name + "' uses unknown type '" + args[i].type + "', assuming class");
+                        test = arg + ".class !$= \"" + args[i].type + "\";";
+                        fail = "must be instance of class " + args[i].type;
                 }
 
                 if (args[i].auto !== undefined) {
@@ -226,7 +235,7 @@ function generate(node, opt, ctx, join) {
                 if (test !== undefined) {
                     addl += (args[i].auto !== undefined ? " else " : "") +
                         "if (" + test + ") {" + wsn +
-                        wst + "error(\"ERROR: Argument '" + args[i].name + "' must be " + args[i].type + "\");" + wsn +
+                        wst + "error(\"ERROR: Argument '" + args[i].name + "' " + fail + "\");" + wsn +
                         wst + "return \"\";" + wsn +
                         "}" + wsn;
                 }
@@ -497,6 +506,8 @@ function generate(node, opt, ctx, join) {
             return "macro_call()";
         case "assign":
             return generate(node.var, opt, nxt) + " = " + generate(node.rhs, opt, nxt);
+        case "binary-assign":
+            return generate(node.var, opt, nxt) + " " + node.op + " " + generate(node.rhs, opt, nxt);
         case "unary-assign":
             return generate(node.var, opt, nxt) + node.op;
         case "field-get":
@@ -505,8 +516,20 @@ function generate(node, opt, ctx, join) {
             return generate(node.expr, opt, nxt) + "._get_array(" + generate(node.array, opt, nxt) + ")";
         case "field-set":
             return generate(node.expr, opt, nxt) + "." + node.name + " = " + generate(node.rhs, opt, nxt);
+        case "unary-field-set":
+            return generate(node.expr, opt, nxt) + "." + node.name + node.op;
+        case "binary-field-set":
+            return generate(node.expr, opt, nxt) + "." + node.name + " " + node.op + " " + generate(node.rhs, opt, nxt);
         case "array-set":
             return generate(node.expr, opt, nxt) + "._set_array(" + generate(node.array, opt, nxt) + ", " + generate(node.rhs, opt, nxt) + ")";
+        case "unary-array-set":
+            var a = generate(node.expr, opt, nxt);
+            var b = generate(node.array, opt, nxt);
+            return a + "._set_array(" + b + ", " + a + "._get_array(" + b + ")" + node.op + ")";
+        case "binary-array-set":
+            var a = generate(node.expr, opt, nxt);
+            var b = generate(node.array, opt, nxt);
+            return a + "._set_array(" + b + ", " + a + "._get_array(" + b + ") " + node.op + " " + generate(node.rhs, opt, nxt) + ")";
         case "variable":
             if (node.global) {
                 return "$" + node.name;

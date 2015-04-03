@@ -14,6 +14,16 @@ namespaceident              [a-zA-Z_][a-zA-Z_0-9:]*
 
 "++"                        return yytext;
 "--"                        return yytext;
+"+="                        return yytext;
+"-="                        return yytext;
+"*="                        return yytext;
+"/="                        return yytext;
+"%="                        return yytext;
+"^="                        return yytext;
+"|="                        return yytext;
+"&="                        return yytext;
+"<<="                       return yytext;
+">>="                       return yytext;
 "=="                        return yytext;
 "!="                        return yytext;
 "$="                        return yytext;

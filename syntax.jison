@@ -428,31 +428,97 @@ map_pair
         { $$ = [{type: "constant", what: "string", value: $1.substring(1, $1.length-1)}, $3]; }
     ;
 
+unary_assign_op: '++' | '--';
+//this causes a massive shift/reduce conflict when used for binary-assign
+binary_assign_op: '=' | '+=' | '-=' | '*=' | '/=' | '%=' | '^=' | '|=' | '&=' | '<<=' | '>>=';
+
 stmt_expr
-    : var '=' expr
-        { $$ = {type: "assign", "var": $1, rhs: $3}; }
-    | var '++'
-        { $$ = {type: "unary-assign", "var": $1, op: $2}; }
-    | var '--'
-        { $$ = {type: "unary-assign", "var": $1, op: $2}; }
+    // : var '=' expr
+    //     { $$ = {type: "assign", "var": $1, rhs: $3}; }
+    // | var '++'
+    //     { $$ = {type: "unary-assign", "var": $1, op: $2}; }
+    // | var '--'
+    //     { $$ = {type: "unary-assign", "var": $1, op: $2}; }
+    : var unary_assign_op
+        { $$ = {type: "unary-assign", var: $1, op: $2}; }
+    | var '=' expr // so i have to do this. oh god
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '+=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '-=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '*=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '/=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '%=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '^=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '|=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '&=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '<<=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
+    | var '>>=' expr
+        { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
     | expr '.' var_local '=' expr
         { $$ = {type: "field-set", expr: $1, name: $3, rhs: $5}; }
+    | expr '.' var_local unary_assign_op
+        { $$ = {type: "unary-field-set", expr: $1, name: $3, op: $4}; }
+    | expr '.' var_local '+=' expr // fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '-=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '*=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '/=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '%=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '^=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '|=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '&=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '<<=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
+    | expr '.' var_local '>>=' expr
+        { $$ = {type: "binary-field-set", expr: $1, name: $3, op: $4, rhs: $5}; }
     | expr '[' expr ']' '=' expr
         { $$ = {type: "array-set", expr: $1, "array": $3, rhs: $6}; }
-    // | 'macro_name' '(' ')'
-    //     { $$ = {type: "macro-call", name: $1, args: []}; }
-    | 'macro_name' '(' expr_list ')'
-        { $$ = {type: "macro-call", name: $1, args: $3}; }
-    // | var_local '(' ')'
-    //     { $$ = {type: "call", name: $1, args: []}; }
+    // | expr '[' expr ']' unary_assign_op
+    //     { $$ = {type: "unary-array-set", expr: $1, "array": $3, op: $5}; }
+    | expr '[' expr ']' '++'
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: "+", rhs: {type: "constant", what: "integer", value: 1}}; }
+    | expr '[' expr ']' '--'
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: "-", rhs: {type: "constant", what: "integer", value: 1}}; }
+    | expr '[' expr ']' '+=' expr // omgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '-=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '*=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '/=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '%=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '^=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '|=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '&=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '<<=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
+    | expr '[' expr ']' '>>=' expr
+        { $$ = {type: "binary-array-set", expr: $1, "array": $3, op: $5.slice(0, -1), rhs: $6}; }
     | var_local '(' expr_list ')'
         { $$ = {type: "call", name: $1, args: $3}; }
-    // | var_local '::' var_local '(' ')'
-    //     { $$ = {type: "call", name: $3, "scope": $1, args: []}; }
     | var_local '::' var_local '(' expr_list ')'
         { $$ = {type: "call", name: $3, scope: $1, args: $5}; }
-    // | expr '.' var_local '(' ')'
-    //     { $$ = {type: "call", name: $3, "target": $1, args: []}; }
     | expr '.' var_local '(' expr_list ')'
         { $$ = {type: "call", name: $3, target: $1, args: $5}; }
     | ts_fence
