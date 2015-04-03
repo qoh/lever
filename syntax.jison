@@ -39,6 +39,8 @@ decl
         { $$ = $1; }
     | datablock_decl
         { $$ = $1; }
+    | match_decl
+        { $$ = $1; }
     | 'package' var_local block_fn_only
         { $$ = {type: "package-decl", name: $2, body: $3, active: false}; }
     | 'active' 'package' var_local block_fn_only
@@ -83,6 +85,25 @@ fn_decl_list
 class_decl
     : 'class' var_local block_fn_only
         { $$ = {type: "class-decl", name: $2, body: $3}; }
+    ;
+
+match_decl
+    : 'match' expr '{' match_pair_list '}'
+        { $$ = {type: "match-decl", variate: $2, body: $4}; }
+    ;
+
+match_pair_list
+    : match_pair
+        { $$ = [$1]; }
+    | match_pair_list ',' match_pair
+        { $$ = $1; $1.push($3); }
+    ;
+
+match_pair
+    : constant_value ':' block
+        { $$ = [{ key: $1, value: $3 }]}
+    | constant_value 'or' constant_value ':' block
+        { $$ = [{ key: $1, value: $5}, { key: $3, value: $5}]; }
     ;
 
 datablock_decl

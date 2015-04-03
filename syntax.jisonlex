@@ -65,9 +65,11 @@ namespaceident              [a-zA-Z_][a-zA-Z_0-9:]*
 "while"                     return 'while';
 "package"                   return 'package';
 "active"                    return 'active';
-"datablock"                      return 'datablock';
+"datablock"                 return 'datablock';
 "state"                     return 'state';
 "use"                       return 'use';
+"match"                     return 'match';
+"or"                        return 'or';
 
 
 {digit}+"."{digit}+         return 'float';
