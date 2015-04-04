@@ -43,61 +43,6 @@ function isExplicitObject(%n) {
 	return isObject(%n) && getSubStr(%n, strlen(%n - 1), 1) $= "\x01";
 }
 
-// TODO: Get rid of this
-function LeverScope(%parent) {
-    return new ScriptObject() {
-        class = "LeverScope";
-        ________references = 1;
-        ________parent = %parent; // AAAAAAAAAAA
-    };
-}
-
-function LeverScope::onRemove(%this) {
-    for (%i = 0; (%pair = %this.getTaggedField(%i)) !$= ""; %i++) {
-        %split = strpos(%pair, "\t");
-        %field = getSubStr(%pair, 0, %split);
-
-        if (%field $= "class" || getSubStr(%field, 0, 8) !$= "________" ||
-            !%this.________owned[%field]
-        ) {
-            %value = getSubStr(%pair, %split + 1, strlen(%pair));
-
-            if (isObject(%value)) {
-                %value.delete();
-            }
-        }
-    }
-}
-
-function LeverScope::keep(%this) {
-    %this.________references++;
-}
-
-function LeverScope::drop(%this) {
-    if (%this.________references-- < 1) {
-        %this.delete();
-    }
-}
-
-function LeverClosure(%scope, %target) {
-    %scope.keep();
-    return new ScriptObject() {
-        class = "LeverClosure";
-        scope = %scope;
-        target = %target;
-    };
-}
-
-function LeverClosure::onRemove(%this) {
-    %this.scope.drop();
-}
-
-function LeverClosure::call(%this, %a, %b, %c, %d, %e, %f, %g, %h, %i, %j,
-    %k, %l, %m, %n, %o, %p, %q, %r) {
-    return call(%this.target, %this.scope, %a, %b, %c, %d, %e, %f, %g, %h, %i,
-        %j, %k, %l, %m, %n, %o, %p, %q, %r, %s);
-}
-
 // I'm so sorry
 function __lever_call0(%target) {
     return isObject(%target) ? %target.call() : call(%target);
