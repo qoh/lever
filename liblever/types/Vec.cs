@@ -22,6 +22,17 @@ function Vec::_set_array(%this, %index, %value) {
     }
 }
 
+function Vec::delete_explicit(%this) {
+    for (%i = 0; %i < %this.length; %i++) {
+        if (isExplicitObject(%this.value[%i])) {
+            %this.value[%i].delete();
+        }
+    }
+
+    %this.delete();
+}
+
+// Leaving this around
 function Vec::delete_owned(%this) {
     for (%i = 0; %i < %this.length; %i++) {
         if (isObject(%this.value[%i])) {

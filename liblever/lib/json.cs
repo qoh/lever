@@ -6,22 +6,21 @@
 // as JSON should (must, per specification) be UTF-8.
 
 function Vec::__toJSON(%this) {
-    %out = "[";
-    for (%i = 0; %i < %this.length; %i++)
+    for (%i = 0; %i < %this.length; %i++) {
         %out = %out @ (%i > 0 ? "," : "") @ JSON::stringify(%this.value[%i]);
-    return %out @ "]";
+    }
+    return "[" @ %out @ "]";
 }
 
 function HashMap::__toJSON(%this) {
-    %out = "{";
-
     for (%i = 0; %i < %this.keyCount; %i++) {
         %key = %this.keyName[%i];
         %value = %this.value[sha1(%key)];
-        %out = %out @ (%i > 0 ? "," : "") @ JSON::stringify(%key) @ ": " @ JSON::stringify(%value);
+        %out = %out @ (%i > 0 ? "," : "") @
+            JSON::stringify(%key, "string") @ ": " @ JSON::stringify(%value);
     }
 
-    return %out @ "}";
+    return "{" @ %out @ "}";
 }
 
 function JSON::stringify(%data, %type) {
@@ -99,7 +98,11 @@ function JSON::parse(%string) {
 
     if (JSON::__parse(%string)) {
         if (isExplicitObject($JSON::Value)) {
-            $JSON::Value.delete();
+            if ($JSON::Value.isMethod("delete_explicit")) {
+                $JSON::Value.delete_explicit();
+            } else {
+                $JSON::Value.delete();
+            }
         }
 
         $JSON::Value = "";
@@ -121,7 +124,7 @@ function JSON::parse(%string) {
     return 0;
 }
 
-function JSON::__parse(%string, %length) {
+function JSON::__parse(%string) {
     while (strpos(" \t\r\n", getSubStr(%string, $JSON::Index, 1)) != -1) {
         $JSON::Index++;
     }
@@ -146,7 +149,6 @@ function JSON::__parse(%string, %length) {
 
     switch$ (getSubStr(%string, $JSON::Index, 1)) {
         case "[":
-            echo("AYY");
             return JSON::__parseArray(%string);
 
         case "{":
@@ -193,7 +195,7 @@ function JSON::__parse(%string, %length) {
             }
 
             while ($JSON::Index < %length) {
-                %char = getSubStr(%string, %start, 1);
+                %char = getSubStr(%string, $JSON::Index, 1);
 
                 if (%char $= ".") {
                     if (%radix) {
@@ -227,76 +229,84 @@ function JSON::__parse(%string, %length) {
                 return 1;
             }
 
-            $JSON::Value = getSubStr(%string, %start,
-                $JSON::Index - %start - 1);
+            $JSON::Value = getSubStr(%string, %start, $JSON::Index - %start);
             return 0;
     }
 }
 
+// TODO: Improve the bounds checking and remove unnecessary whitespace skip
+// compared to JSON::__parse's existing whitespace skip; only need it for , ]
 function JSON::__parseArray(%string) {
-    // if (getSubStr(%string, $JSON::Index, 1) !$= "[") {
-    //     $JSON::Error = "__parseArray did not get an array!";
-    //     return 1;
-    // }
+    %array = Vec();
+    %start = $JSON::Index; // For error messages
+    %length = strlen(%string);
+    $JSON::Index++;
 
-    echo("ARRAYY");
-
-    %vec = Vec();
-
-    %index = $JSON::Index;
-    %level = 0;
-
-    %currentValue = "";
+    // state 0 = start
+    //   item -> state 1
+    //   ]    -> end
+    // state 1 = value
+    //   ,    -> state 2
+    //   ]    -> end
+    // state 2 = comma
+    //  item  -> state 1
+    %state = 0;
 
     while (1) {
-        if (%index >= strLen(%string)) {
-            $JSON::Error = "Array doesn't end!";
-            $JSON::Index = %index;
+        // Skip whitespace
+        while (strpos(" \t\r\n", %current = getSubStr(%string, $JSON::Index, 1)) != -1) {
+            $JSON::Index++;
+        }
+
+        if ($JSON::Index >= %length) {
+            $JSON::Error = "Array never ends";
+            $JSON::Index = %start;
+            $JSON::Value = %array;
             return 1;
         }
 
-        %current = getSubStr(%string, %index, 1);
-
-        if (%current $= "[") {
-            %level += 1;
-            %index += 1;
-
-            continue;
-        }
-        else if (%current $= "]") {
-            %level -= 1;
-            %index += 1;
-
-            if (%level == -1) {
-                $JSON::Index = %index;
-                $JSON::Value = %vec;
-
-                return 0;
+        if (%current $= "]") {
+            if (%state == 2) { // Right after a comma
+                $JSON::Error = "Expected value after comma, got array end";
+                $JSON::Value = %array;
+                return 1;
             }
 
-            continue;
-        }
-
-        if (%level > 0) {
-            %currentValue = %currentValue @ %current;
-            %index += 1;
-        }
-        else {
-            if (%current $= ",") {
-                %vec.__add_item(JSON::parse(%currentValue));
-                %currentValue = "";
-
-                %index += 1;
-                continue;
+            $JSON::Index++;
+            $JSON::Value = %array;
+            return 0;
+        } else if (%current $= ",") {
+            if (%state == 0) {
+                $JSON::Error = "Expected value or array end, got comma";
+                $JSON::Value = %array;
+                return 1;
+            } else if (%state == 2) {
+                $JSON::Error = "Expected value after comma, got another comma";
+                $JSON::Value = %array;
+                return 1;
+            } else {
+                %state = 2;
+                $JSON::Index++;
             }
-        }
+        } else { // Otherwise, assume that it is a value
+            if (%state == 1) {
+                $JSON::Error = "Expected comma or array end, got another value";
+                $JSON::Value = %array;
+                return 1;
+            }
 
-        %currentValue = %currentValue @ %current;
-        %index += 1;
+            if (JSON::__parse(%string)) {
+                %array.delete_explicit();
+                return 1;
+            }
+
+            %array.push($JSON::Value);
+            %state = 1;
+        }
     }
 
-    $JSON::Error = "TODO: __parseArray";
-    return 1;
+    $JSON::Value = %array;
+    return 0;
 }
 
 function JSON::__parseMap(%string) {

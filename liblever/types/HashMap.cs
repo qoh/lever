@@ -37,6 +37,18 @@ function HashMap::_set_array(%this, %key, %value) {
     return %value;
 }
 
+function HashMap::delete_explicit(%this) {
+    for (%i = 0; %i < %this.keyCount; %i++) {
+        %value = %this.value[sha1(%this.keyName[%i])];
+
+        if (isExplicitObject(%value)) {
+            %value.delete();
+        }
+    }
+
+    %this.delete();
+}
+
 function HashMap::copy(%this) {
     %copy = new ScriptObject() {
         class = "HashMap";
