@@ -8,5 +8,5 @@ exec("./general/iter.cs");
 exec("./general/class.cs");
 exec("./general/extend.cs");
 
-// exec("./lib/json.cs");
+exec("./lib/json.cs");
 // exec("./lib/profiler.cs");

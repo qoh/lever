@@ -5,6 +5,25 @@
 // to call `getUTFString` after using `JSON::stringify`,
 // as JSON should (must, per specification) be UTF-8.
 
+function Vec::__toJSON(%this) {
+    %out = "[";
+    for (%i = 0; %i < %this.length; %i++)
+        %out = %out @ (%i > 0 ? "," : "") @ JSON::stringify(%this.value[%i]);
+    return %out @ "]";
+}
+
+function HashMap::__toJSON(%this) {
+    %out = "{";
+
+    for (%i = 0; %i < %this.keyCount; %i++) {
+        %key = %this.keyName[%i];
+        %value = %this.value[sha1(%key)];
+        %out = %out @ (%i > 0 ? "," : "") @ JSON::stringify(%key) @ ": " @ JSON::stringify(%value);
+    }
+
+    return %out @ "}";
+}
+
 function JSON::stringify(%data, %type) {
     if (TypeMarker::test(%data)) {
         if (%type $= "") {
@@ -127,6 +146,7 @@ function JSON::__parse(%string, %length) {
 
     switch$ (getSubStr(%string, $JSON::Index, 1)) {
         case "[":
+            echo("AYY");
             return JSON::__parseArray(%string);
 
         case "{":
@@ -214,6 +234,67 @@ function JSON::__parse(%string, %length) {
 }
 
 function JSON::__parseArray(%string) {
+    // if (getSubStr(%string, $JSON::Index, 1) !$= "[") {
+    //     $JSON::Error = "__parseArray did not get an array!";
+    //     return 1;
+    // }
+
+    echo("ARRAYY");
+
+    %vec = Vec();
+
+    %index = $JSON::Index;
+    %level = 0;
+
+    %currentValue = "";
+
+    while (1) {
+        if (%index >= strLen(%string)) {
+            $JSON::Error = "Array doesn't end!";
+            $JSON::Index = %index;
+            return 1;
+        }
+
+        %current = getSubStr(%string, %index, 1);
+
+        if (%current $= "[") {
+            %level += 1;
+            %index += 1;
+
+            continue;
+        }
+        else if (%current $= "]") {
+            %level -= 1;
+            %index += 1;
+
+            if (%level == -1) {
+                $JSON::Index = %index;
+                $JSON::Value = %vec;
+
+                return 0;
+            }
+
+            continue;
+        }
+
+        if (%level > 0) {
+            %currentValue = %currentValue @ %current;
+            %index += 1;
+        }
+        else {
+            if (%current $= ",") {
+                %vec.__add_item(JSON::parse(%currentValue));
+                %currentValue = "";
+
+                %index += 1;
+                continue;
+            }
+        }
+
+        %currentValue = %currentValue @ %current;
+        %index += 1;
+    }
+
     $JSON::Error = "TODO: __parseArray";
     return 1;
 }

@@ -2,7 +2,7 @@ function Vec() {
     return new ScriptObject() {
         class = "Vec";
         length = 0;
-    };
+    }  @ "\x01";
 }
 
 function Vec::_add_item(%this, %value) {
