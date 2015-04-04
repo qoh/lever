@@ -32,4 +32,4 @@ fn test {
     }
 }
 
-$AAAAAAY::::::::::::::LMAO = 1;
+$AAAAAAY::LMAO = 1;

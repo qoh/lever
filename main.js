@@ -169,6 +169,7 @@ function generate(node, opt, ctx, join) {
             ts += wsn + "};" + wsn;
 
             return ts;
+
         case "package-decl":
             var ts = "package " + node.name + " {" + wsn + generate(node.body, opt, nxt, wsn) + wsn + "};" + wsn;
 
@@ -177,6 +178,7 @@ function generate(node, opt, ctx, join) {
             }
 
             return ts;
+
         case "fn-stmt":
             var root = find_root(ctx, "class-decl");
 
@@ -188,7 +190,7 @@ function generate(node, opt, ctx, join) {
             if (root !== null) {
                 name = root.node.name + "::" + name;
                 args = args.slice(0);
-                args.unshift("this");
+                args.unshift({name: "this"});
 
                 if (scoped) {
                     args.unshift("%____scope");
@@ -209,16 +211,29 @@ function generate(node, opt, ctx, join) {
                 var arg = "%" + args[i].name;
 
                 switch (args[i].type) {
-                    case "required": test = arg + " $= \"\""; fail = " is required";
-                    case "int": test = arg + " !$= (" + arg + " | 0)";
-                    case "float": test = arg + " !$= (" + arg + " + 0)";
-                    case "object": test = "!isObject(" + arg + ")";
-                    case "bool": test = arg + " !$= true && " + arg + " !$= false";
-
+                    case "required":
+                        test = arg + " $= \"\"";
+                        fail = " is required";
+                        break;
+                    case "int":
+                        test = arg + " !$= (" + arg + " | 0)";
+                        break;
+                    case "float":
+                        test = arg + " !$= (" + arg + " + 0)";
+                        break;
+                    case "object":
+                        test = "!isObject(" + arg + ")";
+                        break;
+                    case "bool":
+                        test = arg + " !$= true && " + arg + " !$= false";
+                        break;
+                    case undefined:
+                        break;
                     default:
                         console.log("Warning: Argument '" + args[i].name + "' for function '" + name + "' uses unknown type '" + args[i].type + "', assuming class");
                         test = arg + ".class !$= \"" + args[i].type + "\";";
                         fail = "must be instance of class " + args[i].type;
+                        break;
                 }
 
                 if (args[i].auto !== undefined) {
