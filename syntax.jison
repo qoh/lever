@@ -35,30 +35,36 @@ top
 // Declarations
 
 decl-func: decl-func-plain | decl-func-scope;
-decl-func-list-req
-    : decl-func
-        { $$ = [$1]; }
-    | decl-func-list-req decl-func
-        { $1.push($2); $$ = $1; }
+// decl-func-list-req
+//     : decl-func
+//         { $$ = [$1]; }
+//     | decl-func-list-req decl-func
+//         { $1.push($2); $$ = $1; }
+//     ;
+// decl-func-list: { $$ = []; } | decl-func-list-req;
+decl-func-list
+    :
+        { $$ = []; }
+    | decl-func-list decl-func
+        { $$ = $1; $$.push($2); }
     ;
-decl-func-list: { $$ = []; } | decl-func-list-req;
 decl-func-plain
-    : 'fn' name '(' decl-func-arg-list ')' '{' stmt-star '}'
+    : 'fn' name '(' decl-func-arg-list ')' '{' stmt-list '}'
         { $$ = {type: "fn-stmt", name: $2, args: $4, body: $7}; }
-    | 'fn' name '{' stmt-star '}'
+    | 'fn' name '{' stmt-list '}'
         { $$ = {type: "fn-stmt", name: $2, args: [], body: $4}; }
-    | 'fn' '/' name '(' decl-func-arg-list ')' '{' stmt-star '}'
+    | 'fn' '/' name '(' decl-func-arg-list ')' '{' stmt-list '}'
         {
             $5.unshift({name: "client"});
             $$ = {type: "fn-stmt", name: "serverCmd" + $3, args: $5, body: $8}; }
         }
-    | 'fn' '/' name '{' stmt-star '}'
+    | 'fn' '/' name '{' stmt-list '}'
         { $$ = {type: "fn-stmt", name: "serverCmd" + $3, args: [{name: "client"}], body: $5}; }
     ;
 decl-func-scope
-    : 'fn' name '::' name '(' decl-func-arg-list ')' '{' stmt-star '}'
+    : 'fn' name '::' name '(' decl-func-arg-list ')' '{' stmt-list '}'
         { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $6, body: $9}; }
-    | 'fn' name '::' name '{' stmt-star '}'
+    | 'fn' name '::' name '{' stmt-list '}'
         { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: [], body: $6}; }
     ;
 decl-func-plain-list-req
@@ -157,13 +163,6 @@ block_fn_class_only
 // ----------------------------
 // Statements
 
-stmt_list
-    : stmt
-        { $$ = [$1]; }
-    | stmt_list stmt
-        { $$ = $1; $1.push($2); }
-    ;
-
 stmt
     : stmt_expr ';'
         { $$ = {type: "expr-stmt", expr: $1}; }
@@ -178,36 +177,30 @@ stmt
     | 'continue' ';'
         { $$ = {type: "continue-stmt"}; }
     | if_stmt
-    | 'for' expr ';' expr ';' expr '{' stmt-star '}'
+    | 'for' expr ';' expr ';' expr '{' stmt-list '}'
         { $$ = {type: "for-stmt", init: $2, test: $4, step: $6, body: $8}; }
-    | 'for' var 'in' expr '{' stmt-star '}'
+    | 'for' var 'in' expr '{' stmt-list '}'
         { $$ = {type: "foreach-stmt", "bind": $2, "iter": $4, body: $6}; }
-    | 'while' expr '{' stmt-star '}'
+    | 'while' expr '{' stmt-list '}'
         { $$ = {type: "while-stmt", "cond": $2, body: $4}; }
-    | 'loop' '{' stmt-star '}'
+    | 'loop' '{' stmt-list '}'
         { $$ = {type: "loop-stmt", body: $3}; }
     | 'match' expr '{' match_pair_list '}'
         { $$ = {type: "match-decl", variate: $2, body: $4}; }
     ;
-// stmt-plus
-//     : stmt { $$ = [$1]; }
-//     | stmt-plus stmt { $1.push($2); $$ = $1 }
-//     ;
-// stmt-star: { $$ = []; } | stmt-plus;
-
-stmt-star // yess
+stmt-list
     :
         { $$ = []; }
-    | stmt-star stmt
+    | stmt-list stmt
         { $$ = $1; $$.push($2); }
     ;
 
 if_stmt
-    : 'if' expr '{' stmt-star '}' 'else' if_stmt
+    : 'if' expr '{' stmt-list '}' 'else' if_stmt
         { $$ = {type: "if-stmt", "cond": $2, body: $4, "else": $7}; }
-    | 'if' expr '{' stmt-star '}' 'else' '{' stmt-star '}'
+    | 'if' expr '{' stmt-list '}' 'else' '{' stmt-list '}'
         { $$ = {type: "if-stmt", "cond": $2, body: $4, "else": $8}; }
-    | 'if' expr '{' stmt-star '}'
+    | 'if' expr '{' stmt-list '}'
         { $$ = {type: "if-stmt", "cond": $2, body: $4, "else": null}; }
     ;
 
@@ -218,9 +211,9 @@ match_pair_list
         { $$ = $1; $1.push($3); }
     ;
 match_pair
-    : constant ':' '{' stmt-star '}'
+    : constant ':' '{' stmt-list '}'
         { $$ = [{ key: $1, value: $4 }]}
-    | constant 'or' constant ':' '{' stmt-star '}'
+    | constant 'or' constant ':' '{' stmt-list '}'
         { $$ = [{ key: $1, value: $6}, { key: $3, value: $6}]; }
     ;
 
@@ -347,7 +340,7 @@ constant
         { $$ = {type: "constant", what: "tagged_string", value: $1.substring(1, $1.length-1)}; }
     | 'boolean'
         { $$ = {type: "constant", what: "boolean", value: $1}; }
-    | 'fn' '(' name-list ')' '{' stmt-star '}'
+    | 'fn' '(' name-list ')' '{' stmt-list '}'
         { $$ = {type: "lambda", args: $3, body: $6}; }
     | '[' expr-list ']'
         { $$ = {type: "create-vec", values: $2}; }
