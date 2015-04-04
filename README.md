@@ -38,13 +38,15 @@ Commands:
 
 ## Syntax
 
+*NOTE: This guide is for people who already understand how to program. Please do not attempt to use this guide as a means to begin learning programming, it will not work.*
+
 ### Basic Syntax
 
-Local variables do not have `%` prepended to them - they are plain. `client` is the same as `%client` in raw TorqueScript. Lever also uses the same standard operands as TorqueScript - including the Torque-specific string catenation operands `@` `SPC` `TAB` and `NL`.
+Local variables do not have `%` prepended to them - they are plain. `client` is the same as `%client` in raw TorqueScript. Lever also uses the same standard operands as TorqueScript - including the Torque-specific string catenation operands `@` `SPC` `TAB` and `NL`. Names such as objects or datablocks should be referenced as `@name` or else it will be confused with a local variable. If you need further examples of how to use a part of Lever, please refer to the tests folder.
 
 ### Functions
 
-The following are equivalent:
+Functions are pretty much the same in Lever as they are in TorqueScript, aside from a few minor oddities. For instance, functions are declared using `fn` instead of `function`. Also, the following are equivalent:
 
     fn myFunc {
         echo("Hello world!");
@@ -54,15 +56,23 @@ The following are equivalent:
         echo("Hello world!");
     }
 
-Arguments are supplied much as in normal TorqueScript:
+Arguments are supplied much the same as in normal TorqueScript:
 
     fn myFunc(a, b) {
         echo(a @ " " @ b @ "!");
     }
 
+Lever also supports default (typesafe) arguments:
+
+    fn myFunc(a, b = "butts") {
+        echo(a @ " " @ b @ "!");
+    }
+
 Lever also supports anonymous functions:
 
-    schedule(1000, 0, fn(a) { echo(a); }, "Hello world!");
+    schedule(1000, 0, fn(a) {
+        echo(a);
+    }, "Hello world!");
 
 ### Packages
 
@@ -86,8 +96,6 @@ Parenting is done by simply calling `Parent` regardless of the function:
 
 ### Classes
 
-DISCLAIMER: Example here is slightly broken - class properties cannot be declared like this yet.
-
 Lever has closer to first-class support for Classes:
 
     class Foo {
@@ -102,8 +110,33 @@ Lever has closer to first-class support for Classes:
         }
     }
 
-    x = Foo::create();
+    x = Foo();
     x.inc();
+
+Lever also supports static classes, initiated with the `static` keyword. These classes are for singletons - they cannot be renamed or deleted.
+
+    static class GameManager {
+        key = "value";
+
+        fn reset() {
+            for client in ClientGroup.iter() {
+                client.instantRespawn();
+            }
+        }
+    }
+
+
+Lever also supports inheritance.
+
+    class Foo {
+        fn firstTest(foo, bar) {}
+        fn secondTest(spam) {}
+    }
+
+    class Bar : Foo {
+        fn firstTest(foo, bar) {}
+        fn thirdTest() {}
+    }
 
 ### Fenced TorqueScript Code
 
@@ -113,6 +146,26 @@ If you need to just write some raw TorqueScript, you can do so:
         `%mb = %mg.member[%i]`;
         messageClient(mb, '', "nope");
     }
+
+### Datablocks
+
+Datablocks are created very similarly to the way they are normally created in TorqueScript, except adapted to fit the mindset of Lever. The following is valid Lever (but won't work in TorqueScript):
+
+    datablock ShapeBaseImage weaponImage {
+        colors: ["1 2 3", "4 5 6"],
+
+        state Test {
+            example: "Hi",
+            also: 1.23
+        },
+
+        state OtherTest {
+            example: "Oh hi again",
+            again: 1.513
+        }
+    }
+
+The `colors` array will be expanded to `colors[0]` and `colors[1]` and there will be states appropriately created for both `Test` and `OtherTest`. Please refer to datablock.ls for an example of the Weapon_Sword implemented in Lever.
 
 ## API
 
