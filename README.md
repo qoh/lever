@@ -42,7 +42,7 @@ Commands:
 
 ### Basic Syntax
 
-Local variables do not have `%` prepended to them - they are plain. `client` is the same as `%client` in raw TorqueScript. Lever also uses the same standard operands as TorqueScript - including the Torque-specific string catenation operands `@` `SPC` `TAB` and `NL`. Names such as objects or datablocks should be referenced as `@name` or else it will be confused with a local variable. If you need further examples of how to use a part of Lever, please refer to the tests folder.
+Local variables do not have `%` prepended to them - they are plain. `client` is the same as `%client` in raw TorqueScript. Lever also uses the same standard operands as TorqueScript - including the Torque-specific string catenation operands `@` `SPC` `TAB` and `NL`. Names such as objects or datablocks should either be wrapped in a string or written as `@name`–otherwise they would be confused with local variables. If you need further examples of how to use a part of Lever, please refer to the tests folder.
 
 ### Functions
 
@@ -62,11 +62,13 @@ Arguments are supplied much the same as in normal TorqueScript:
         echo(a @ " " @ b @ "!");
     }
 
-Lever also supports default (typesafe) arguments:
+Lever also supports default arguments:
 
-    fn myFunc(a, b = "butts") {
+    fn myFunc(a, b="world") {
         echo(a @ " " @ b @ "!");
     }
+
+Note that these are evaluated as expressions in the function body, so using the previous arguments or creating objects will work fine.
 
 Lever also supports anonymous functions:
 
