@@ -2,7 +2,7 @@ function HashMap() {
     return new ScriptObject() {
         class = "HashMap";
         keyCount = 0;
-    };
+    }  @ "\x01";
 }
 
 function HashMap::_add_pair(%this ,%key, %value) {
