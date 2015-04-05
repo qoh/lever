@@ -3,3 +3,8 @@ for i in 0..10 {
 }
 
 (0..3).apply("echo");
+
+fn foo {}
+fn foo -> int {}
+fn foo() {}
+fn foo() -> int {}

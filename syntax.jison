@@ -41,11 +41,15 @@ decl-func
         { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $6, body: $9}; }
     ;
 decl-func-plain
-    : 'fn' name '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2, args: [], body: $4}; }
-    | 'fn' name '(' fn-arg-list ')' '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2, args: $4, body: $7}; }
+    // : 'fn' name '{' stmt-list '}'
+    //     { $$ = {type: "fn-stmt", name: $2, args: [], body: $4}; }
+    // | 'fn' name '(' fn-arg-list ')' '{' stmt-list '}'
+    //     { $$ = {type: "fn-stmt", name: $2, args: $4, body: $7}; }
+    : fn name fn-args fn-type '{' stmt-list '}'
+        { $$ = {type: "fn-stmt", name: $2, args: $3, ret: $4, body: $6}; }
     ;
+fn-args: { $$ = []; } | '(' fn-arg-list ')' { $$ = $2; };
+fn-type: { $$ = null; } | '->' name { $$ = $2; };
 fn-arg
     : name
         { $$ = {name: $1}; }

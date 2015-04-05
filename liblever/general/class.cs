@@ -22,10 +22,14 @@ package ClassHelperPackage {
                 %name = %this.methodName[%i];
                 %line = "";
 
+                if (%this.methodType[%name] !$= "") {
+                    %line = " -> " @ %this.methodType[%name];
+                }
+
                 if (%this.isInherited[%name]) {
-                    %line = " - inherited from " @ %this.parent;
+                    %line = %line @ "  (inherited from " @ %this.parent;
                 } else if (%this.parent.isMethod[%name]) {
-                    %line = " - overwritten version";
+                    %line = %line @ "  (virtual)";
                 }
 
                 echo("  " @ %name @ "(" @ %this.methodArgs[%name] @ ")" @ %line);

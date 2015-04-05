@@ -21,6 +21,7 @@ function Vec(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {
 if (!Vec.isMethodonAdd) {
 	Vec.isMethodonAdd = 1;
 	Vec.methodArgsonAdd = "";
+	Vec.methodTypeonAdd = "";
 	Vec.methodName[Vec.methodCount] = "onAdd";
 	Vec.methodCount++;
 }
@@ -31,6 +32,7 @@ function Vec::onAdd(%this) {
 if (!Vec.isMethodclear) {
 	Vec.isMethodclear = 1;
 	Vec.methodArgsclear = "";
+	Vec.methodTypeclear = "";
 	Vec.methodName[Vec.methodCount] = "clear";
 	Vec.methodCount++;
 }
@@ -44,6 +46,7 @@ for (%i = 0; %i < %this.length; %i++) {
 if (!Vec.isMethodpush) {
 	Vec.isMethodpush = 1;
 	Vec.methodArgspush = "value";
+	Vec.methodTypepush = "";
 	Vec.methodName[Vec.methodCount] = "push";
 	Vec.methodCount++;
 }
@@ -55,15 +58,35 @@ function Vec::push(%this, %value) {
 if (!Vec.isMethodmap) {
 	Vec.isMethodmap = 1;
 	Vec.methodArgsmap = "func";
+	Vec.methodTypemap = "";
 	Vec.methodName[Vec.methodCount] = "map";
 	Vec.methodCount++;
 }
 function Vec::map(%this, %func) {
 for (%i = 0; %i < %this.length; %i++) {
-if (isObject(%_t = %func) && %_t $= %_t.getID()) %_t._call(); else call(%_t);
-%thing = (isObject(%_t = %func) && %_t $= %_t.getID() ? %_t._call("foo", "bar") : call(%_t, "foo", "bar"));
 %value = (isObject(%_t = %func) && %_t $= %_t.getID() ? %_t._call(%this.value[%i]) : call(%_t, %this.value[%i]));
 %this.value[%i] = %value;
 }
+}
+
+if (!Vec.isMethodany) {
+	Vec.isMethodany = 1;
+	Vec.methodArgsany = "callable predicate";
+	Vec.methodTypeany = "boolean";
+	Vec.methodName[Vec.methodCount] = "any";
+	Vec.methodCount++;
+}
+function Vec::any(%this, %predicate) {
+if (isObject(%predicate) && %predicate $= %predicate.getID() ? !%predicate.isMethod("_call") : !isFunction(%predicate)) {
+	error("ERROR: Argument 'predicate' must be of type callable");
+	return "";
+}
+for (%i = 0; %i < %this.length; %i++) {
+%value = %this.value[%i];
+if ((isObject(%_t = %predicate) && %_t $= %_t.getID() ? %_t._call(%value) : call(%_t, %value))) {
+return 1;
+}
+}
+return 0;
 }
 

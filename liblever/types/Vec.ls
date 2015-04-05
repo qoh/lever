@@ -21,4 +21,15 @@ class Vec {
             `%this.value[%i] = %value`;
         }
     }
+
+    // Return type test
+    fn any(callable predicate) -> boolean {
+        for i in 0..this.length {
+            `%value = %this.value[%i]`;
+            if predicate!(value) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
