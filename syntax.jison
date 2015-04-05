@@ -1,6 +1,5 @@
 %left '[' '{'
 %right '%=' '&=' '^=' '+=' '-=' '*=' '/=' '|=' '<<=' '>>=' '='
-%right '=>'
 %left '?' ':'
 %left '||'
 %left '&&'
@@ -20,7 +19,6 @@
 
 start: top-list EOF { return $1; };
 top-list: top { $$ = [$1]; } | top-list top { $$ = $1; $$.push($2); };
-
 top
     : stmt
     | decl-func
@@ -35,16 +33,10 @@ top
 // Functions
 decl-func
     : decl-func-plain
-    | fn name '::' name '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: [], body: $6}; }
-    | fn name '::' name '(' fn-arg-list ')' '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $6, body: $9}; }
+    | fn name '::' name fn-args fn-type '{' stmt-list '}'
+        { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $5, ret: $6, body: $8}; }
     ;
 decl-func-plain
-    // : 'fn' name '{' stmt-list '}'
-    //     { $$ = {type: "fn-stmt", name: $2, args: [], body: $4}; }
-    // | 'fn' name '(' fn-arg-list ')' '{' stmt-list '}'
-    //     { $$ = {type: "fn-stmt", name: $2, args: $4, body: $7}; }
     : fn name fn-args fn-type '{' stmt-list '}'
         { $$ = {type: "fn-stmt", name: $2, args: $3, ret: $4, body: $6}; }
     ;
@@ -138,17 +130,24 @@ stmt
         { $$ = {type: "return-stmt", expr: null}; }
     | 'return' expr ';'
         { $$ = {type: "return-stmt", expr: $2}; }
+    | 'return' expr ',' expr-list-r ';'
+        { $$ = {type: "return-stmt", expr: $2, rest: $4}; }
     | 'break' ';'
         { $$ = {type: "break-stmt"}; }
     | 'continue' ';'
         { $$ = {type: "continue-stmt"}; }
+    // Causes conflict
+    // | name ',' name-list-r '=' expr-call
+    //     { $$ = {type: "read-multi-return", name: $1, rest: $3, call: $5}; }
     | stmt-if
     | 'match' expr '{' match-pair-list-r '}'
         { $$ = {type: "match-decl", variate: $2, body: $4}; }
     | 'for' expr ';' expr ';' expr '{' stmt-list '}'
         { $$ = {type: "for-stmt", init: $2, test: $4, step: $6, body: $8}; }
     | 'for' var 'in' expr '{' stmt-list '}'
-        { $$ = {type: "foreach-stmt", "bind": $2, "iter": $4, body: $6}; }
+        { $$ = {type: "foreach-stmt", bind: $2, iter: $4, body: $6}; }
+    | 'for' var ',' name-list-r 'in' expr '{' stmt-list '}'
+        { $$ = {type: "foreach-stmt", bind: $2, rest: $4, iter: $6, body: $8}; }
     | 'while' expr '{' stmt-list '}'
         { $$ = {type: "while-stmt", "cond": $2, body: $4}; }
     | 'loop' '{' stmt-list '}'
@@ -188,19 +187,16 @@ match-pair-list-r
 
 expr
     : expr-stmt
-        { $$ = $1; }
+    | constant
+    | var
     | '(' expr ')'
         { $$ = {type: "expr-expr", expr: $2}; }
-    | var
-        { $$ = $1; }
     | '@' name
         { $$ = {type: "identifier", name: $2}; }
     | expr '.' name
         { $$ = {type: "field-get", expr: $1, name: $3}; }
     | expr '[' expr ']'
         { $$ = {type: "array-get", expr: $1, "array": $3}; }
-    | constant
-        { $$ = $1; }
     | expr '&&' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '||' expr
@@ -230,6 +226,16 @@ expr
     | expr '/' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '%' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr '^' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr '|' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr '&' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr '<<' expr
+        { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
+    | expr '>>' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '@' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
@@ -265,7 +271,14 @@ expr-stmt
         { $$ = {type: "unary-field-set", expr: $1, name: $3, op: $4}; }
     | expr '[' expr ']' '=' expr
         { $$ = {type: "array-set", expr: $1, "array": $3, rhs: $6}; }
-    | name '(' expr-list ')'
+    | expr-call
+    | ts_fence
+        { $$ = {type: "ts-fence-expr", code: $1.substring(1, $1.length-1)}; }
+    | 'new' name '(' expr-list ')'
+        { $$ = {type: "new-object", class: $2, args: $4}; }
+    ;
+expr-call
+    : name '(' expr-list ')'
         { $$ = {type: "call", name: $1, args: $3}; }
     | name '::' name '(' expr-list ')'
         { $$ = {type: "call", name: $3, scope: $1, args: $5}; }
@@ -273,10 +286,6 @@ expr-stmt
         { $$ = {type: "call", name: $3, target: $1, args: $5}; }
     | expr '!' '(' expr-list ')'
         { $$ = {type: "call-expr", expr: $1, args: $4}; }
-    | ts_fence
-        { $$ = {type: "ts-fence-expr", code: $1.substring(1, $1.length-1)}; }
-    | 'new' name '(' expr-list ')'
-        { $$ = {type: "new-object", class: $2, args: $4}; }
     ;
 expr-list-r
     : expr
@@ -297,6 +306,9 @@ constant
         { $$ = {type: "constant", what: "tagged_string", value: $1.substring(1, $1.length-1)}; }
     | 'boolean'
         { $$ = {type: "constant", what: "boolean", value: $1}; }
+    // Causes conflict
+    // | '(' name-list ')' '->' expr
+    //     { $$ = {type: "lambda", args: $2, body: {type: "return-stmt", expr: $5}}; }
     | 'fn' '(' name-list ')' '{' stmt-list '}'
         { $$ = {type: "lambda", args: $3, body: $6}; }
     | '[' expr-list ']'
@@ -321,7 +333,7 @@ map-pair-list: { $$ = []; } | map-pair-list-r;
 
 name-list-r
     : name
-        { $$ = []; }
+        { $$ = [$1]; }
     | name-list-r ',' name
         { $$ = $1; $$.push($3); }
     ;

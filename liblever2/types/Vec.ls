@@ -15,21 +15,10 @@ class Vec {
         this.length++;
     }
 
-    fn map(func) {
+    fn map(callable func) {
         for i in 0..this.length {
             value = func!(`%this.value[%i]`);
             `%this.value[%i] = %value`;
         }
-    }
-
-    // Return type test
-    fn any(callable predicate) -> boolean {
-        for i in 0..this.length {
-            `%value = %this.value[%i]`;
-            if predicate!(value) {
-                return true;
-            }
-        }
-        return false;
     }
 }

@@ -14,3 +14,7 @@ fn test() {
     echo(join);
     return vec;
 }
+
+for key, value, foo, bar in {foo: 5, bar: 7} {
+    echo(key @ " = " @ value);
+}

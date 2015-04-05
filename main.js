@@ -207,7 +207,7 @@ function generate(node, opt, ctx, join) {
                     case "object":
                         result = "0";
                         break;
-                    
+
                     default:
                         result = "\"\"";
                         break;
@@ -404,6 +404,12 @@ function generate(node, opt, ctx, join) {
                 clean = "";
             }
 
+            if (node.rest !== undefined) {
+                for (var i = 0; i < node.rest.length; i++) {
+                    clean += "$_ret" + i + " = " + generate(node.rest[i], opt, nxt) + ";" + wsn;
+                }
+            }
+
             if (opt.profile) {
                 if (node.expr !== null) {
                     return clean + "%_=" + generate(node.expr, opt, nxt) + ";PROFILER_LEAVE();return%_;";
@@ -417,9 +423,10 @@ function generate(node, opt, ctx, join) {
             } else {
                 return clean + "return;";
             }
-            break;
+
         case "break-stmt":
             return "break;";
+
         case "if-stmt":
             if (node.else !== null) {
                 return "if (" + generate(node.cond, opt, nxt) + ")" +
@@ -430,7 +437,7 @@ function generate(node, opt, ctx, join) {
                     " {" + wsn + generate(node.body, opt, nxt) + wsn + "}";
             }
         case "foreach-stmt":
-            if (node.iter.type == "range") {
+            if (node.iter.type == "range" && node.rest === undefined) {
                 node.no_iter = true;
 
                 // Optimize the `for i in 0..9` case
@@ -452,11 +459,22 @@ function generate(node, opt, ctx, join) {
             }
 
             nxt.ref = ref;
+            var rest = "";
 
-            return ref + "=" + generate(node.iter, opt, nxt) + ";" + wsn +
-                "while (iter_next(" + ref +")) {" + wsn + generate(node.bind, opt, nxt) +
-                " = $iter_value[" + ref + "];" + wsn + generate(node.body, opt, nxt, wsn) +
-                wsn + "}" + wsn + "iter_drop(" + ref + ");" + wsn;
+            if (node.rest !== undefined) {
+                for (var i = 0; i < node.rest.length; i++) {
+                    rest += wst + "%" + node.rest[i] + " = $iter_value[" + ref + ", " + i + "];" + wsn;
+                }
+            }
+
+            return (
+                ref + "=" + generate(node.iter, opt, nxt) + ";" + wsn +
+                "while (iter_next(" + ref +")) {" + wsn +
+                wst + generate(node.bind, opt, nxt) + " = $iter_value[" + ref + "];" + wsn +
+                rest +
+                generate(node.body, opt, nxt, wsn) + wsn +
+                "}" + wsn +
+                "iter_drop(" + ref + ");" + wsn);
         case "for-stmt":
             return "for (" +
                 generate(node.init, opt, nxt) + "; " +
