@@ -185,10 +185,16 @@ function generate(node, opt, ctx, join) {
             var name = node.name;
             var args = node.args;
 
+            var scoped = false;
+
             if (root !== null) {
                 name = root.node.name + "::" + name;
                 args = args.slice(0);
                 args.unshift({name: "this"});
+
+                if (scoped) {
+                    args.unshift("%____scope");
+                }
             }
 
             var str = "";
@@ -253,6 +259,15 @@ function generate(node, opt, ctx, join) {
             if (opt.profile) {
                 addl += "PROFILER_ENTER(\"" + name + "\");" + wsn;
                 addr += wsn + "PROFILER_LEAVE();";
+            }
+
+            if (node.scoped) {
+                addl += "%____scope=LeverScope(%____scope);";
+                addr += "%____scope.drop();";
+
+                for (var i = 0; i < args.length; i++) {
+                    addl += "%____scope." + args[i] + "=%" + args[i] + ";";
+                }
             }
 
             return "function " + name + "(" + str + ")" +
@@ -502,6 +517,8 @@ function generate(node, opt, ctx, join) {
             break;
         case "new-object":
             return "new " + node.class + "(" + generate(node.args, opt, nxt, ", ") + ")";
+        case "macro-call":
+            return "macro_call()";
         case "assign":
             return generate(node.var, opt, nxt) + " = " + generate(node.rhs, opt, nxt);
         case "binary-assign":
@@ -533,6 +550,12 @@ function generate(node, opt, ctx, join) {
                 return "$" + node.name;
             }
 
+            var fn = find_root(ctx, "fn-stmt", true);
+
+            if (fn !== null && fn.node.scoped) {
+                return "%____scope." + node.name;
+            }
+
             return "%" + node.name;
         case "identifier":
             return node.name;
@@ -560,6 +583,13 @@ function generate(node, opt, ctx, join) {
             var name = "___anonymous_" + sha1.digest("hex");
             var args = "";
 
+            var fn = find_root(ctx, "fn-stmt");
+            var scoped = fn !== null && fn.node.scoped;
+
+            if (scoped) {
+              node.args.unshift("____scope");
+            }
+
             for (var i = 0; i < node.args.length; i++) {
                 args += (i > 0 ? ", " : "") + "%" + node.args[i];
             }
@@ -567,6 +597,10 @@ function generate(node, opt, ctx, join) {
             root.inject += "function " + name +
                 "(" + args + ")" +
                 " {" + wsn + generate(node.body, opt, nxt, wsn) + wsn + "}" + wsn + wsn;
+
+            if (scoped) {
+              return "LeverClosure(%____scope, \"" + name + "\")";
+            }
 
             return "\"" + name + "\"";
         case "create-vec":
@@ -578,6 +612,7 @@ function generate(node, opt, ctx, join) {
 
             return "Vec()" + values;
         case "create-map":
+            //console.log(JSON.stringify(node, null, 4));
             var values = "";
 
             for (var i = 0; i < node.pairs.length; i++) {
@@ -593,6 +628,7 @@ function generate(node, opt, ctx, join) {
 
 function convert(source, opts) {
     var ast = parser.parse(source);
+    //console.log(JSON.stringify(ast, null, 4));
 
     var opt = {"compact": false, "profile": false};
     for(var k in opts)
