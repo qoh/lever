@@ -1,16 +1,3 @@
-f = fn() {};
-f = fn(a) {};
-f = fn(a, b) {};
-
-fn foo {}
-fn foo() {}
-fn foo(a) {}
-fn foo(a, b) {}
-fn /foo {}
-fn /foo() {}
-fn /foo(a) {}
-fn /foo(a, b) {}
-
 // fn anon() {
 //     vec = [1, 2, 3];
 //
@@ -44,11 +31,11 @@ fn /foo(a, b) {}
 //     }
 // }
 
-/*fn /start {
+fn /start {
     if !@ClientGroup.iter().all(c => c.isReady) {
         client.chatMessage("Some players are not ready yet");
     }
-}*/
+}
 
 // active package TestPac {
 //     fn /MessageSent (text) {
