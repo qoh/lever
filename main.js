@@ -177,22 +177,18 @@ function generate(node, opt, ctx, join) {
             }
 
             return ts;
+
         case "fn-stmt":
-            var root = find_root(ctx, "class-decl");
+            // console.log("fn-stmt", node.name);
 
             var name = node.name;
             var args = node.args;
 
-            var scoped = false;
-
+            var root = find_root(ctx, "class-decl");
             if (root !== null) {
                 name = root.node.name + "::" + name;
                 args = args.slice(0);
-                args.unshift("this");
-
-                if (scoped) {
-                    args.unshift("%____scope");
-                }
+                args.unshift({name: "this"});
             }
 
             var str = "";
@@ -204,21 +200,34 @@ function generate(node, opt, ctx, join) {
                 str += (i > 0 ? ", " : "") + "%" + args[i].name;
 
                 var test;
-                var fail = "must be " + args[i].type;
+                var fail = "must be of type " + args[i].type;
 
                 var arg = "%" + args[i].name;
 
                 switch (args[i].type) {
-                    case "required": test = arg + " $= \"\""; fail = " is required";
-                    case "int": test = arg + " !$= (" + arg + " | 0)";
-                    case "float": test = arg + " !$= (" + arg + " + 0)";
-                    case "object": test = "!isObject(" + arg + ")";
-                    case "bool": test = arg + " !$= true && " + arg + " !$= false";
-
+                    case "required":
+                        test = arg + " $= \"\"";
+                        fail = " is required";
+                        break;
+                    case "int":
+                        test = arg + " !$= (" + arg + " | 0)";
+                        break;
+                    case "float":
+                        test = arg + " !$= (" + arg + " + 0)";
+                        break;
+                    case "object":
+                        test = "!isObject(" + arg + ")";
+                        break;
+                    case "bool":
+                        test = arg + " !$= true && " + arg + " !$= false";
+                        break;
+                    case undefined:
+                        break;
                     default:
                         console.log("Warning: Argument '" + args[i].name + "' for function '" + name + "' uses unknown type '" + args[i].type + "', assuming class");
                         test = arg + ".class !$= \"" + args[i].type + "\";";
                         fail = "must be instance of class " + args[i].type;
+                        break;
                 }
 
                 if (args[i].auto !== undefined) {
@@ -259,6 +268,8 @@ function generate(node, opt, ctx, join) {
                 " {" + wsn + addl + generate(node.body, opt, nxt, wsn) + addr + wsn + "}" + wsn;
 
         case "class-decl":
+            console.log("class-decl " + node.name);
+
             if (find_root(ctx, "package-decl")) {
                 return generate(node.body, opt, nxt, wsn);
             }
@@ -331,22 +342,22 @@ function generate(node, opt, ctx, join) {
 
                 var args = "";
 
-                for (var i = 0; i < fn.args.length; i++) {
-                    if (i > 0) {
+                for (var j = 0; j < fn.args.length; j++) {
+                    if (j > 0) {
                         args += ", ";
                     }
 
-                    if (fn.args[i].auto !== undefined) {
+                    if (fn.args[j].auto !== undefined) {
                         args += "[";
                     }
 
-                    if (fn.args[i].type !== undefined) {
-                        args += fn.args[i].type + " ";
+                    if (fn.args[j].type !== undefined) {
+                        args += fn.args[j].type + " ";
                     }
 
-                    args += fn.args[i].name;
+                    args += fn.args[j].name;
 
-                    if (fn.args[i].auto !== undefined) {
+                    if (fn.args[j].auto !== undefined) {
                         args += "[";
                     }
                 }
@@ -500,6 +511,19 @@ function generate(node, opt, ctx, join) {
                 }
             }
             break;
+        case "call-expr":
+            var expr = generate(node.expr, opt, nxt);
+            var args = generate(node.args, opt, nxt, ", ");
+
+            var test = "isObject(%_t = " + expr + ") && %_t $= %_t.getID()";
+            var cobj = "%_t._call(" + args + ")";
+            var cfun = "call(%_t" + (args != "" ? ", " : "") + args + ")";
+
+            if (ctx.node !== null && ctx.node.type == "expr-stmt") {
+                return "if (" + test + ") " + cobj + "; else " + cfun;
+            }
+
+            return "(" + test + " ? " + cobj + " : " + cfun + ")";
         case "new-object":
             return "new " + node.class + "(" + generate(node.args, opt, nxt, ", ") + ")";
         case "macro-call":

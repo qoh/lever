@@ -1,6 +1,6 @@
 digit                       [0-9]
-ident                       [a-zA-Z_][a-zA-Z_0-9]*
-namespaceident              [a-zA-Z_][a-zA-Z_0-9:]*
+name                        [a-zA-Z_][a-zA-Z_0-9]*
+name_scope                  ([a-zA-Z_][a-zA-Z_0-9]*\:\:)*[a-zA-Z_][a-zA-Z_0-9]*
 
 %%
 
@@ -90,9 +90,8 @@ namespaceident              [a-zA-Z_][a-zA-Z_0-9:]*
 "\""[\w\W]*?"\""            return 'string';
 "'"[\w\W]*?"'"              return 'tagged_string';
 "true"|"false"              return 'boolean';
-"$"{namespaceident}         return 'var_global';
-{ident}"!"                  return 'macro_name';
-{ident}                     return 'var_local';
+"$"{name_scope}             return 'global';
+{name}                      return 'name';
 "`"[^`]*"`"                 return 'ts_fence';
 
 .                           return 'ROBOCOP';
