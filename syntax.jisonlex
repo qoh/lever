@@ -65,8 +65,8 @@ name_scope                  ([a-zA-Z_][a-zA-Z_0-9]*\:\:)*[a-zA-Z_][a-zA-Z_0-9]*
 "scoped"                    return 'scoped';
 "fn"                        return 'fn';
 "new"                       return 'new';
-"static class"              return 'static_class'; // cheating.
 "class"                     return 'class';
+"static"                    return 'static';
 "return"                    return 'return';
 "break"                     return 'break';
 "continue"                  return 'continue';

@@ -270,13 +270,14 @@ function generate(node, opt, ctx, join) {
             }
 
             return "function " + name + "(" + str + ")" +
-                " {" + wsn + addl + generate(node.body, opt, nxt, wsn) + addr + wsn + "}" + wsn;
+                " {" + wsn + addl + generate(node.body, opt, nxt, wsn) + addr + "}" + wsn;
 
         case "class-decl":
             if (find_root(ctx, "package-decl")) {
                 return generate(node.body, opt, nxt, wsn);
             }
 
+            var code = "";
             var fields = "";
 
             for (var i = 0; i < node.body.length; i++) {
@@ -286,53 +287,37 @@ function generate(node, opt, ctx, join) {
             }
 
             if (node.static) {
-                var c_delete  = "function " + node.name + "::delete() { error(\"ERROR: Cannot delete static classes\"); }";
-                var c_setname = "function " + node.name + "::setName() { error(\"ERROR: Cannot rename static classes\"); }";
-                var c_create  = "if (!isObject(" + node.name + ")) {" + wsn + wst + "new ScriptObject(\"" + node.name + "\"); }";
-
-                var code = "";
-
-                for (var i = 0; i < node.body.length; i++) {
-                    var fn = node.body[i];
-
-                    if (fn.type == "fn-stmt") {
-                        code += generate(fn, opt, nxt) + wsn;
-                    }
-                }
-
                 code +=
-                    "function " + node.name + "::delete() { error(\"ERROR: Cannot delete static classes\"); }" + wsn +
-                    "function " + node.name + "::setName() { error(\"ERROR: Cannot rename static classes\"); }" + wsn + wsn +
                     "if (!isObject(" + node.name + ")) {" + wsn +
                     wst + "new ScriptObject(\"" + node.name + "\") {" + wsn +
                     fields +
                     wst + "};" + wsn +
-                    "}";
-
-                return code;
+                    "}" + wsn + wsn +
+                    "function " + node.name + "::delete() { error(\"ERROR: Cannot delete static classes\"); }" + wsn +
+                    "function " + node.name + "::setName() { error(\"ERROR: Cannot rename static classes\"); }" + wsn + wsn;
+            } else {
+              code +=
+                  "if (!isObject(" + node.name + ")) {" + wsn +
+                  wst + "new ScriptObject(" + node.name + ") {" + wsn +
+                  wst + wst + "class = \"Class\";" + wsn +
+                  wst + wst + "____inst = 0;" + wsn +
+                  wst + wst + "parent = \"" + (node.parent === undefined ? "" : node.parent) + "\";" + wsn +
+                  wst + wst + "methodCount = 0;" + wsn +
+                  fields +
+                  wst + "};" + wsn +
+                  "}" + wsn +
+                  "function " + node.name + "(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {" + wsn +
+                  wst + "%_ = new ScriptObject() {" + wsn +
+                  wst + wst + "class = \"" + node.name + "\";" + wsn +
+                  wst + wst + "superClass = \"Class\";" + wsn +
+                  wst + wst + "____inst = 1;" + wsn +
+                  wst + "};" + wsn +
+                  wst + "if(isFunction(\"" + node.name + "\", \"onNew\")) {" + wsn +
+                  wst + wst + "%_.onNew(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" + wsn +
+                  wst + "}" + wsn +
+                  wst + "return %_;" + wsn +
+                  "}" + wsn + wsn;
             }
-
-            var code =
-                "if (!isObject(" + node.name + ")) {" + wsn +
-                wst + "new ScriptObject(" + node.name + ") {" + wsn +
-                wst + wst + "class = \"Class\";" + wsn +
-                wst + wst + "____inst = 0;" + wsn +
-                wst + wst + "parent = \"" + (node.parent === undefined ? "" : node.parent) + "\";" + wsn +
-                wst + wst + "methodCount = 0;" + wsn +
-                fields +
-                wst + "};" + wsn +
-                "}" + wsn +
-                "function " + node.name + "(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s) {" + wsn +
-                wst + "%_ = new ScriptObject() {" + wsn +
-                wst + wst + "class = \"" + node.name + "\";" + wsn +
-                wst + wst + "superClass = \"Class\";" + wsn +
-                wst + wst + "____inst = 1;" + wsn +
-                wst + "};" + wsn +
-                wst + "if(isFunction(\"" + node.name + "\", \"onNew\")) {" + wsn +
-                wst + wst + "%_.onNew(%a,%b,%c,%d,%e,%f,%g,%h,%i,%j,%k,%l,%m,%n,%o,%p,%q,%r,%s);" + wsn +
-                wst + "}" + wsn +
-                wst + "return %_;" + wsn +
-                "}" + wsn + wsn;
 
             for (var i = 0; i < node.body.length; i++) {
                 var fn = node.body[i];
