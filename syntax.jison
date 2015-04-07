@@ -62,7 +62,7 @@ fn-arg-list: { $$ = []; } | fn-arg-list-r;
 
 // Datablocks
 decl-datablock
-    : 'datablock' name name '{' datablock_pair_list '}'
+    : 'datablock' name name '{' decl-datablock-pair-list '}'
         { $$ = {type: "datablock-decl", datatype: $2, name: $3, body: $5}; }
     ;
 decl-datablock-pair

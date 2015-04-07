@@ -8,10 +8,6 @@ class Iterator {
         return false;
     }
 
-    fn supports_back() -> boolean {
-        return false;
-    }
-
     // Extension methods
     fn count() -> int {
         n = 0;
@@ -26,11 +22,6 @@ class Iterator {
     }
 
     fn reverse() -> ReverseIterator {
-        if !this.supports_back() {
-            error("ERROR: Iterator does not support reverse iteration");
-            return 0;
-        }
-
         return ReverseIterator(this);
     }
 }
@@ -46,12 +37,11 @@ class MapIterator : Iterator {
     }
 
     fn next() -> boolean {
-        if this.iter.next() {
-            this.value = this.func!(this.iter.value);
-            return true;
+        status, value = this.iter.next();
+        if status {
+            value = this.func!(value);
         }
-
-        return false;
+        return status, value;
     }
 
     fn next_back() -> boolean {
@@ -81,8 +71,7 @@ class ReverseIterator : Iterator {
 
     fn next() -> boolean {
         if this.iter.next_back() {
-            //this.value = this.iter.value;
-            this.value = this.value;
+            this.value = (this.iter.value);
             return true;
         }
 
