@@ -99,12 +99,14 @@ package-item-list
 
 // Classes
 decl-class
-    : 'static_class' name '{' class-item-list '}'
-        { $$ = {type: "class-decl", name: $2, body: $4, static: true}; }
-    | class name '{' class-item-list '}'
-        { $$ = {type: "class-decl", name: $2, body: $4}; }
+    : class name '{' class-item-list '}'
+        { $$ = {type: "class-decl", name: $2, body: $4, static: false}; }
     | class name ':' name '{' class-item-list '}'
-        { $$ = {type: "class-decl", name: $2, parent: $4, body: $6}; }
+        { $$ = {type: "class-decl", name: $2, parent: $4, body: $6, static: false}; }
+    | static class name '{' class-item-list '}'
+        { $$ = {type: "class-decl", name: $3, body: $5, static: true}; }
+    | static class name ':' name '{' class-item-list '}'
+        { $$ = {type: "class-decl", name: $3, parent: $5, body: $7, static: true}; }
     ;
 class-item
     : decl-func-plain
