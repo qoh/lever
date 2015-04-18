@@ -495,7 +495,13 @@ function generate(node, opt, ctx, join) {
                 var root_pkg = find_root(ctx, "package-decl"),
                     root_fn = find_root(ctx, "fn-stmt");
                 if (root_pkg && root_fn) {
-                    return "Parent::" + root_fn.node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
+                    var rootname = root_fn.node.name
+
+                    if (rootname.indexOf('::') > 0) {
+                        rootname = rootname.substring(rootname.indexOf('::') + 2);
+                    }
+
+                    return "Parent::" + rootname + "(" + generate(node.args, opt, nxt, ", ") + ")";
                 }
                 var root_class = find_root(ctx, "class-decl");
                 if (root_class && root_fn && root_class.node.parent !== undefined) {
