@@ -131,7 +131,7 @@ function generate(node, opt, ctx, join) {
             return "liblever_exec(" + file + ");" + wsn;
 
         case "datablock-decl":
-            var ts = "datablock " + node.datatype + "(" + node.name + ") {" + wsn;
+            var ts = "datablock " + node.datatype + "(" + node.name + (node.inherit !== undefined ? " : " + node.inherit : "") + ") {" + wsn;
 
             var state = 0;
 
