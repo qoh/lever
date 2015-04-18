@@ -93,13 +93,13 @@ case 3: case 38: case 46: case 62:
  this.$ = $$[$0-1]; this.$.push($$[$0]); 
 break;
 case 10:
- this.$ = {type: "fn-stmt", name: $$[$0-7] + $$[$0-6] + $$[$0-5], args: $$[$0-4], ret: $$[$0-3], body: $$[$0-1], serverCmd: false}; 
+ this.$ = {type: "fn-stmt", name: $$[$0-7] + $$[$0-6] + $$[$0-5], args: $$[$0-4], ret: $$[$0-3], body: $$[$0-1]}; 
 break;
 case 11:
- this.$ = {type: "fn-stmt", name: $$[$0-5], args: $$[$0-4], ret: $$[$0-3], body: $$[$0-1], serverCmd: false}; 
+ this.$ = {type: "fn-stmt", name: $$[$0-5], args: $$[$0-4], ret: $$[$0-3], body: $$[$0-1]}; 
 break;
 case 12:
- this.$ = {type: "fn-stmt", name: $$[$0-5], args: $$[$0-4], ret: $$[$0-3], body: $$[$0-1], serverCmd: true}; 
+ this.$ = {type: "fn-stmt", name: "serverCmd" + $$[$0-5], args: $$[$0-4], ret: $$[$0-3], body: $$[$0-1]}; 
 break;
 case 13: case 23: case 31: case 37: case 45: case 61: case 122: case 136: case 140:
  this.$ = []; 
