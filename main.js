@@ -495,9 +495,6 @@ function generate(node, opt, ctx, join) {
                 var root_pkg = find_root(ctx, "package-decl"),
                     root_fn = find_root(ctx, "fn-stmt");
                 if (root_pkg && root_fn) {
-                    if (root_fn.node.name.match(/^servercmd/i)) {
-                        node.args.unshift({"type": "variable", "global": false, "name": "client"});
-                    }
                     return "Parent::" + root_fn.node.name + "(" + generate(node.args, opt, nxt, ", ") + ")";
                 }
                 var root_class = find_root(ctx, "class-decl");
