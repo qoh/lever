@@ -63,7 +63,9 @@ fn-arg-list: { $$ = []; } | fn-arg-list-r;
 // Datablocks
 decl-datablock
     : 'datablock' name name '{' decl-datablock-pair-list '}'
-        { $$ = {type: "datablock-decl", datatype: $2, name: $3, body: $5}; }
+        { $$ = {type: "datablock-decl", datatype: $2, name: $3, inherit: undefined, body: $5}; }
+    | 'datablock' name name ':' name '{' decl-datablock-pair-list '}'
+        { $$ = {type: "datablock-decl", datatype: $2, name: $3, inherit: $5, body: $7}; }
     ;
 decl-datablock-pair
     : 'state' name '{' map-pair-list '}'

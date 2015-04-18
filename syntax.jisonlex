@@ -40,6 +40,9 @@ name_scope                  ([a-zA-Z_][a-zA-Z_0-9]*\:\:)*[a-zA-Z_][a-zA-Z_0-9]*
 "*"                         return yytext;
 "/"                         return yytext;
 "%"                         return yytext;
+"&"                         return yytext;
+"^"                         return yytext;
+"|"                         return yytext;
 
 "="                         return yytext;
 "("                         return yytext;
