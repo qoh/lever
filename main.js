@@ -182,6 +182,10 @@ function generate(node, opt, ctx, join) {
             // console.log("fn-stmt", node.name);
 
             var name = node.name;
+
+            if ( node.serverCmd )
+                name = "serverCmd" + name;
+
             var args = node.args;
 
             var root = find_root(ctx, "class-decl");

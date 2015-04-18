@@ -34,11 +34,13 @@ top
 decl-func
     : decl-func-plain
     | fn name '::' name fn-args fn-type '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $5, ret: $6, body: $8}; }
+        { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $5, ret: $6, body: $8, serverCmd: false}; }
     ;
 decl-func-plain
     : fn name fn-args fn-type '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2, args: $3, ret: $4, body: $6}; }
+        { $$ = {type: "fn-stmt", name: $2, args: $3, ret: $4, body: $6, serverCmd: false}; }
+    | fn '/' name fn-args fn-type '{' stmt-list '}'
+        { $$ = {type: "fn-stmt", name: $3, args: $4, ret: $5, body: $7, serverCmd: true}; }
     ;
 fn-args: { $$ = []; } | '(' fn-arg-list ')' { $$ = $2; };
 fn-type: { $$ = null; } | '->' name { $$ = $2; };
