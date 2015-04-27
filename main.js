@@ -41,10 +41,11 @@ function find_root(ctx, type, anyway) {
 
 function generate(node, opt, ctx, join) {
     var nxt = {node: node, from: ctx},
-        wsn = "", wst = "";
+        wsn = "", wst = "", wss = "";
 
     if(!opt.compact)
     {
+        wss = " ";
         wsn = "\n";
         wst = "\t";
     }
@@ -128,7 +129,19 @@ function generate(node, opt, ctx, join) {
                     file = "\"" + file + "\"";
             }
 
-            return "liblever_exec(" + file + ");" + wsn;
+            return "if (!isFile(" + file + ")) {" + wsn +
+                    wst + "if (strPos(" + file + ", \"*\") > -1) {" + wsn +
+                    wst + wst + "for (%i = findFirstFile(" + file + "); isFile(%i); %i = findNextFile(" + file + ")) {" + wsn +
+                    wst + wst + wst + "exec(%i);" + wsn +
+                    wst + wst + "}" + wsn +
+                    wst + "}" + wsn +
+                    "}" +
+                    "else {" + wsn +
+                    wst + "exec(" + file + ");" + wsn +
+                    "}" + wsn;
+
+        case "continue-stmt":
+            return "continue;" + wsn;
 
         case "datablock-decl":
             var ts = "datablock " + node.datatype + "(" + node.name + (node.inherit !== undefined ? " : " + node.inherit : "") + ") {" + wsn;
@@ -526,7 +539,19 @@ function generate(node, opt, ctx, join) {
             return "(" + test + " ? " + cobj + " : " + cfun + ")";
 
         case "new-object":
-            return "new " + node.class + "(" + generate(node.args, opt, nxt, ", ") + ")";
+            var out = "new " + node.class + "(" + generate(node.args, opt, nxt, ", ") + ")";
+
+            out += wss + "{" + wsn;
+
+            var block = node.block;
+
+            for ( var i = 0; i < block.length; i++ ) {
+                out += wst + block[i][0].value + wss + "=" + wss + generate(block[i][1], opt, nxt) + ";" + wsn;
+            }
+
+            out += "}";
+
+            return out;
         case "assign":
             return generate(node.var, opt, nxt) + " = " + generate(node.rhs, opt, nxt);
         case "binary-assign":

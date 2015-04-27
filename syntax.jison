@@ -280,8 +280,10 @@ expr-stmt
     | expr-call
     | ts_fence
         { $$ = {type: "ts-fence-expr", code: $1.substring(1, $1.length-1)}; }
-    | 'new' name '(' expr-list ')'
-        { $$ = {type: "new-object", class: $2, args: $4}; }
+    //| 'new' name '(' expr-list ')'
+    //    { $$ = {type: "new-object", class: $2, args: $4, block: undefined}; }
+    | 'new' name '(' expr-list ')' '{' map-pair-list '}'
+        { $$ = {type: "new-object", class: $2, args: $4, block: $7}; }
     ;
 expr-call
     : name '(' expr-list ')'
