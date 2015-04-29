@@ -555,9 +555,19 @@ function generate(node, opt, ctx, join) {
         case "assign":
             return generate(node.var, opt, nxt) + " = " + generate(node.rhs, opt, nxt);
         case "binary-assign":
-            return generate(node.var, opt, nxt) + " " + node.op + " " + generate(node.rhs, opt, nxt);
+            switch(node.var.type) {
+                case "array-get":
+                    return generate({type: "array-set", expr: node.var.expr, array: node.var.array, rhs: node.rhs}, opt, nxt);
+                default:
+                    return generate(node.var, opt, nxt) + " " + node.op + " " + generate(node.rhs, opt, nxt);
+            }
         case "unary-assign":
-            return generate(node.var, opt, nxt) + node.op;
+            switch(node.var.type) {
+                case "array-get":
+                    return generate({type: "unary-array-set", expr: node.var.expr, array: node.var.array, op: node.op}, opt, nxt);
+                default:
+                    return generate(node.var, opt, nxt) + node.op;
+            }
         case "field-get":
             return generate(node.expr, opt, nxt) + "." + node.name;
         case "array-get":

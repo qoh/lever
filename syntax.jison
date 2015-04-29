@@ -194,15 +194,11 @@ match-pair-list-r
 expr
     : expr-stmt
     | constant
-    | var
+    | lvalue-expr
     | '(' expr ')'
         { $$ = {type: "expr-expr", expr: $2}; }
     | '@' name
         { $$ = {type: "identifier", name: $2}; }
-    | expr '.' name
-        { $$ = {type: "field-get", expr: $1, name: $3}; }
-    | expr '[' expr ']'
-        { $$ = {type: "array-get", expr: $1, "array": $3}; }
     | expr '&&' expr
         { $$ = {type: "binary", op: $2, lhs: $1, rhs: $3}; }
     | expr '||' expr
@@ -263,20 +259,12 @@ expr
         { $$ = {type: "unary", op: $1, expr: $2}; }
     ;
 expr-stmt
-    : var '=' expr
+    : lvalue-expr '=' expr
         { $$ = {type: "binary-assign", var: $1, op: $2, rhs: $3}; }
-    | var '++'
+    | lvalue-expr '++'
         { $$ = {type: "unary-assign", var: $1, op: $2}; }
-    | var '--'
+    | lvalue-expr '--'
         { $$ = {type: "unary-assign", var: $1, op: $2}; }
-    | expr '.' name '=' expr
-        { $$ = {type: "field-set", expr: $1, name: $3, rhs: $5}; }
-    | expr '.' name '++'
-        { $$ = {type: "unary-field-set", expr: $1, name: $3, op: $4}; }
-    | expr '.' name '--'
-        { $$ = {type: "unary-field-set", expr: $1, name: $3, op: $4}; }
-    | expr '[' expr ']' '=' expr
-        { $$ = {type: "array-set", expr: $1, "array": $3, rhs: $6}; }
     | expr-call
     | ts_fence
         { $$ = {type: "ts-fence-expr", code: $1.substring(1, $1.length-1)}; }
@@ -346,6 +334,14 @@ name-list-r
         { $$ = $1; $$.push($3); }
     ;
 name-list: { $$ = []; } | name-list-r;
+
+lvalue-expr
+    : var
+    | expr '.' name
+        { $$ = {type: "field-get", expr: $1, name: $3}}
+    | lvalue-expr '[' expr ']'
+        { $$ = {type: "array-get", expr: $1, array: $3}}
+    ;
 
 var
     : name
