@@ -191,9 +191,7 @@ function generate(node, opt, ctx, join) {
 
             return ts;
 
-        case "fn-stmt":
-            // console.log("fn-stmt", node.name);
-
+        case "fn-decl":
             var name = node.name;
             var args = node.args;
 
@@ -335,7 +333,7 @@ function generate(node, opt, ctx, join) {
             for (var i = 0; i < node.body.length; i++) {
                 var fn = node.body[i];
 
-                if (fn.type !== "fn-stmt") {
+                if (fn.type !== "fn-decl") {
                     continue;
                 }
 
@@ -461,18 +459,18 @@ function generate(node, opt, ctx, join) {
 
             if (node.rest !== undefined) {
                 for (var i = 0; i < node.rest.length; i++) {
-                    rest += wst + "%" + node.rest[i] + " = $iter_value[" + ref + ", " + i + "];" + wsn;
+                    rest += wst + "%" + node.rest[i] + " = $_ret" + (i + 1) + ";" + wsn;
                 }
             }
 
             return (
                 ref + "=" + generate(node.iter, opt, nxt) + ";" + wsn +
-                "while (iter_next(" + ref +")) {" + wsn +
-                wst + generate(node.bind, opt, nxt) + " = $iter_value[" + ref + "];" + wsn +
+                "while (call($_iter_next[" + ref + "], " + ref + ")) {" + wsn +
+                wst + generate(node.bind, opt, nxt) + " = $_ret0;" + wsn +
                 rest +
                 generate(node.body, opt, nxt, wsn) + wsn +
                 "}" + wsn +
-                "iter_drop(" + ref + ");" + wsn);
+                "_iter_drop(" + ref + ");" + wsn);
         case "for-stmt":
             return "for (" +
                 generate(node.init, opt, nxt) + "; " +
@@ -506,7 +504,7 @@ function generate(node, opt, ctx, join) {
             } else if (node.name.toLowerCase() === "parent") {
                 // Parent() sugar
                 var root_pkg = find_root(ctx, "package-decl"),
-                    root_fn = find_root(ctx, "fn-stmt");
+                    root_fn = find_root(ctx, "fn-decl");
                 if (root_pkg && root_fn) {
                     var rootname = root_fn.node.name
 

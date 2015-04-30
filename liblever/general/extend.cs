@@ -100,40 +100,27 @@ function SimObject::_set_array(%this, %name, %value) {
 }
 
 function simset_iter_next(%id) {
-    %set = $iter_set[%id];
-
-    if ($iter_owner[%id]) {
-        if (%set.getCount()) {
-            $iter_value[%id] = %set.getObject(0);
-            %set.remove($iter_value[%id]); // could be faster
-            return 1;
-        }
-    } else {
-        if ($iter_index[%id] < %set.getCount()) {
-            $iter_value[%id] = %set.getObject($iter_index[%id]);
-            $iter_index[%id]++;
-            return 1;
-        }
+    if ($iter_i[%id] <= $iter_j[%id]) {
+        $_ret0 = $iter_set[%id].getObject($iter_i[%id]);
+        $iter_i[%id]++;
+        return 1;
     }
-
     return 0;
 }
-
-function simset_iter_drop(%id) {
-    if ($iter_owner[%id] && isObject($iter_set[%id])) {
-        $iter_set[%id].clear(); // don't delete the members (TODO: revisit)
-        $iter_set[%id].delete();
+function simset_iter_prev(%id) {
+    if ($iter_j[%id] >= $iter_i[%id]) {
+        $_ret0 = $iter_set[%id].getObject($iter_j[%id]);
+        $iter_j[%id]--;
+        return 1;
     }
-
-    $iter_index[%id] = "";
-    $iter_owner[%id] = "";
-    $iter_set[%id] = "";
+    return 0;
 }
-
 function SimSet::iter(%this) {
-    %id = iter_new("simset_iter_next", "simset_iter_drop");
-    $iter_index[%id] = 0;
+    %id = _iter_new();
+    $_iter_next[%id] = "simset_iter_next";
+    $_iter_prev[%id] = "simset_iter_prev";
     $iter_set[%id] = %this;
-    $iter_owner[%id] = 0;
+    $iter_i[%id] = 0;
+    $iter_j[%id] = %this.getCount() - 1;
     return %id;
 }

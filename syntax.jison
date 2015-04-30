@@ -34,13 +34,13 @@ top
 decl-func
     : decl-func-plain
     | fn name '::' name fn-args fn-type '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2 + $3 + $4, args: $5, ret: $6, body: $8}; }
+        { $$ = {type: "fn-decl", name: $2 + $3 + $4, args: $5, ret: $6, body: $8}; }
     ;
 decl-func-plain
     : fn name fn-args fn-type '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: $2, args: $3, ret: $4, body: $6}; }
+        { $$ = {type: "fn-decl", name: $2, args: $3, ret: $4, body: $6}; }
     | fn '/' name fn-args fn-type '{' stmt-list '}'
-        { $$ = {type: "fn-stmt", name: "serverCmd" + $3, args: $4, ret: $5, body: $7}; }
+        { $$ = {type: "fn-decl", name: "serverCmd" + $3, args: $4, ret: $5, body: $7}; }
     ;
 fn-args: { $$ = []; } | '(' fn-arg-list ')' { $$ = $2; };
 fn-type: { $$ = null; } | '->' name { $$ = $2; };
@@ -159,12 +159,7 @@ stmt
     | 'loop' '{' stmt-list '}'
         { $$ = {type: "loop-stmt", body: $3}; }
     ;
-stmt-list
-    :
-        { $$ = []; }
-    | stmt-list stmt
-        { $$ = $1; $$.push($2); }
-    ;
+stmt-list: { $$ = []; } | stmt-list stmt { $$ = $1; $$.push($2); };
 
 stmt-if
     : 'if' expr '{' stmt-list '}' 'else' stmt-if
@@ -257,6 +252,25 @@ expr
         { $$ = {type: "unary", op: $1, expr: $2}; }
     | '~' expr  %prec UNARY
         { $$ = {type: "unary", op: $1, expr: $2}; }
+    | 'integer'
+        { $$ = {type: "constant", what: "integer", value: $1}; }
+    | 'float'
+        { $$ = {type: "constant", what: "float", value: $1}; }
+    | 'string'
+        { $$ = {type: "constant", what: "string", value: $1.substring(1, $1.length-1)}; }
+    | 'tagged_string'
+        { $$ = {type: "constant", what: "tagged_string", value: $1.substring(1, $1.length-1)}; }
+    | 'boolean'
+        { $$ = {type: "constant", what: "boolean", value: $1}; }
+    // Causes conflict
+    // | '(' name-list ')' '->' expr
+    //     { $$ = {type: "lambda", args: $2, body: {type: "return-stmt", expr: $5}}; }
+    | 'fn' '(' name-list ')' '{' stmt-list '}'
+        { $$ = {type: "lambda", args: $3, body: $6}; }
+    | '[' expr-list ']'
+        { $$ = {type: "create-vec", values: $2}; }
+    | '{' map-pair-list '}'
+        { $$ = {type: "create-map", pairs: $2}; }
     ;
 expr-stmt
     : lvalue-expr '=' expr
@@ -290,28 +304,6 @@ expr-list-r
         { $$ = $1; $$.push($3); }
     ;
 expr-list: { $$ = []; } | expr-list-r;
-
-constant
-    : 'integer'
-        { $$ = {type: "constant", what: "integer", value: $1}; }
-    | 'float'
-        { $$ = {type: "constant", what: "float", value: $1}; }
-    | 'string'
-        { $$ = {type: "constant", what: "string", value: $1.substring(1, $1.length-1)}; }
-    | 'tagged_string'
-        { $$ = {type: "constant", what: "tagged_string", value: $1.substring(1, $1.length-1)}; }
-    | 'boolean'
-        { $$ = {type: "constant", what: "boolean", value: $1}; }
-    // Causes conflict
-    // | '(' name-list ')' '->' expr
-    //     { $$ = {type: "lambda", args: $2, body: {type: "return-stmt", expr: $5}}; }
-    | 'fn' '(' name-list ')' '{' stmt-list '}'
-        { $$ = {type: "lambda", args: $3, body: $6}; }
-    | '[' expr-list ']'
-        { $$ = {type: "create-vec", values: $2}; }
-    | '{' map-pair-list '}'
-        { $$ = {type: "create-map", pairs: $2}; }
-    ;
 
 map-pair
     : name ':' expr

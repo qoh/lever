@@ -10,12 +10,13 @@ fn data(a) {
         { name: "Cat", age: 2 }
     ];
 
-    sum = users.iter().map(u => (u["age"])).fold(0, @add);
+    // supposed to be:
+    // sum = users.iter().map(u -> u["age"]).fold(0, (a, b) -> a + b);
+    //sum = users.iter().map(fn(u) { return (u["age"]); }).fold(0, fn(a, b) { return a + b; });
     echo("Average age: " @ ages / users.length);
 
-    for user in users.into_iter() {
-        n = n + 1;
-        echo("User #" @ n);
+    for index, user in iter_enumerate(users.into_iter(), 1) {
+        echo("User #" @ index);
         for key in user.keys() {
             echo("  " @ key @ ": " @ user[key]);
         }
